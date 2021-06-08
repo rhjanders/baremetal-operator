@@ -256,14 +256,9 @@ func TestBuildRAIDCleanSteps(t *testing.T) {
 			},
 		},
 		{
-			name: "raid is nil",
-			raid: nil,
-			expected: []nodes.CleanStep{
-				{
-					Interface: "raid",
-					Step:      "delete_configuration",
-				},
-			},
+			name:     "raid is nil",
+			raid:     nil,
+			expected: nil,
 		},
 		{
 			name: "volumes is nil",
