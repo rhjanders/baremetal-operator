@@ -151,11 +151,8 @@ func BuildRAIDCleanSteps(raid *metal3v1alpha1.RAIDConfig) (cleanSteps []nodes.Cl
 			Step:      "delete_configuration",
 		},
 	)
-	// If raid configuration is empty, only need to clear old configuration
-	if len(raid.HardwareRAIDVolumes) == 0 && len(raid.SoftwareRAIDVolumes) == 0 {
-		return
-	}
-	if len(raid.HardwareRAIDVolumes) == 0 && len(raid.SoftwareRAIDVolumes) != 0 {
+
+	if raid.HardwareRAIDVolumes == nil && raid.SoftwareRAIDVolumes != nil {
 		cleanSteps = append(
 			cleanSteps,
 			nodes.CleanStep{
@@ -164,6 +161,12 @@ func BuildRAIDCleanSteps(raid *metal3v1alpha1.RAIDConfig) (cleanSteps []nodes.Cl
 			},
 		)
 	}
+
+	// If raid configuration is empty, only need to clear old configuration
+	if len(raid.HardwareRAIDVolumes) == 0 && len(raid.SoftwareRAIDVolumes) == 0 {
+		return
+	}
+
 	// ‘create_configuration’ doesn’t remove existing disks. It is recommended
 	// that only the desired logical disks exist in the system after manual cleaning.
 	cleanSteps = append(

@@ -261,7 +261,7 @@ func TestBuildRAIDCleanSteps(t *testing.T) {
 			expected: nil,
 		},
 		{
-			name: "volumes is nil",
+			name: "remove hardware RAID",
 			raid: &metal3v1alpha1.RAIDConfig{
 				HardwareRAIDVolumes: nil,
 				SoftwareRAIDVolumes: nil,
@@ -274,7 +274,7 @@ func TestBuildRAIDCleanSteps(t *testing.T) {
 			},
 		},
 		{
-			name: "volumes is empty",
+			name: "remove hardware RAID",
 			raid: &metal3v1alpha1.RAIDConfig{
 				HardwareRAIDVolumes: []metal3v1alpha1.HardwareRAIDVolume{},
 				SoftwareRAIDVolumes: []metal3v1alpha1.SoftwareRAIDVolume{},
@@ -283,6 +283,23 @@ func TestBuildRAIDCleanSteps(t *testing.T) {
 				{
 					Interface: "raid",
 					Step:      "delete_configuration",
+				},
+			},
+		},
+		{
+			name: "remove software RAID",
+			raid: &metal3v1alpha1.RAIDConfig{
+				HardwareRAIDVolumes: nil,
+				SoftwareRAIDVolumes: []metal3v1alpha1.SoftwareRAIDVolume{},
+			},
+			expected: []nodes.CleanStep{
+				{
+					Interface: "raid",
+					Step:      "delete_configuration",
+				},
+				{
+					Interface: "deploy",
+					Step:      "erase_devices_metadata",
 				},
 			},
 		},
