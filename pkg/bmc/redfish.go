@@ -147,3 +147,12 @@ func (a *redfishiDracAccessDetails) RAIDInterface() string {
 func (a *redfishiDracAccessDetails) VendorInterface() string {
 	return "no-vendor"
 }
+
+func (a *redfishAccessDetails) NeedsReset() bool {
+        return false
+}
+
+func (a *redfishAccessDetails) ResetSteps() []CleanStep {
+        var cleanSteps []CleanStep
+        return cleanSteps
+}

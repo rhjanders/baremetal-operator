@@ -101,3 +101,12 @@ func (a *ibmcAccessDetails) VendorInterface() string {
 func (a *ibmcAccessDetails) SupportsSecureBoot() bool {
 	return false
 }
+
+func (a *ibmcAccessDetails) NeedsReset() bool {
+        return false
+}
+
+func (a *ibmcAccessDetails) ResetSteps() []CleanStep {
+        var cleanSteps []CleanStep
+        return cleanSteps
+}

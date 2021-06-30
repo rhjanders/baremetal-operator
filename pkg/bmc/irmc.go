@@ -91,3 +91,12 @@ func (a *iRMCAccessDetails) VendorInterface() string {
 func (a *iRMCAccessDetails) SupportsSecureBoot() bool {
 	return true
 }
+
+func (a *iRMCAccessDetails) NeedsReset() bool {
+        return false
+}
+
+func (a *iRMCAccessDetails) ResetSteps() []CleanStep {
+        var cleanSteps []CleanStep
+        return cleanSteps
+}

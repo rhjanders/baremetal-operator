@@ -93,3 +93,12 @@ func (a *iLO5AccessDetails) VendorInterface() string {
 func (a *iLO5AccessDetails) SupportsSecureBoot() bool {
 	return true
 }
+
+func (a *iLO5AccessDetails) NeedsReset() bool {
+        return false
+}
+
+func (a *iLO5AccessDetails) ResetSteps() []CleanStep {
+        var cleanSteps []CleanStep
+        return cleanSteps
+}

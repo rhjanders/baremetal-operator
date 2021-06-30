@@ -96,3 +96,12 @@ func (a *ipmiAccessDetails) VendorInterface() string {
 func (a *ipmiAccessDetails) SupportsSecureBoot() bool {
 	return false
 }
+
+func (a *ipmiAccessDetails) NeedsReset() bool {
+	return false
+}
+
+func (a *ipmiAccessDetails) ResetSteps() []CleanStep {
+	var cleanSteps []CleanStep
+	return cleanSteps
+}

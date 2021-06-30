@@ -99,3 +99,24 @@ func (a *iDracAccessDetails) VendorInterface() string {
 func (a *iDracAccessDetails) SupportsSecureBoot() bool {
 	return false
 }
+
+func (a *iDracAccessDetails) ResetSteps() []CleanStep {
+	var cleanSteps []CleanStep
+	cleanSteps = append(
+		cleanSteps,
+		CleanStep{
+			Interface: "idrac",
+			Step:      "known_good_state",
+		},
+	)
+	return cleanSteps
+}
+
+func (a *iDracAccessDetails) NeedsReset() bool {
+	// TODO(janders) add check if externally provisoned
+	if len(a.ResetSteps()) > 0 {
+		return true
+	} else {
+		return false
+	}
+}

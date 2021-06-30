@@ -13,6 +13,12 @@ import (
 // AccessDetails based on the input parameters.
 type AccessDetailsFactory func(parsedURL *url.URL, disableCertificateVerification bool) (AccessDetails, error)
 
+type CleanStep struct {
+    Interface string                 `json:"interface" required:"true"`
+    Step      string                 `json:"step" required:"true"`
+    Args      map[string]interface{} `json:"args,omitempty"`
+}
+
 var factories = map[string]AccessDetailsFactory{}
 
 // RegisterFactory maps a BMC type name to an AccessDetailsFactory,
@@ -62,6 +68,13 @@ type AccessDetails interface {
 
 	// Whether the driver supports changing secure boot state.
 	SupportsSecureBoot() bool
+
+	// List supported BMC reset steps, if any
+	ResetSteps() []CleanStep
+
+	// Check whether the BMC is capable of performing a reset pre-deploy
+	// Currently only suported on iDRAC* BMC types
+	NeedsReset() bool
 }
 
 func getParsedURL(address string) (parsedURL *url.URL, err error) {

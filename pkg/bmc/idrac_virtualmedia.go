@@ -90,3 +90,24 @@ func (a *redfishiDracVirtualMediaAccessDetails) VendorInterface() string {
 func (a *redfishiDracVirtualMediaAccessDetails) SupportsSecureBoot() bool {
 	return true
 }
+
+func (a *redfishiDracVirtualMediaAccessDetails) ResetSteps() []CleanStep {
+	var cleanSteps []CleanStep
+	cleanSteps = append(
+		cleanSteps,
+		CleanStep{
+			Interface: "idrac",
+			Step: "known_good_state",
+		},
+	)
+        return cleanSteps
+}
+
+func (a *redfishiDracVirtualMediaAccessDetails) NeedsReset() bool {
+        // TODO(janders) add check if the host is externally provisoned
+        if len(a.ResetSteps()) > 0 {
+                return true
+        } else {
+                return false
+        }
+}

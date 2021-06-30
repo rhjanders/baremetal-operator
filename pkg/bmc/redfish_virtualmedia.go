@@ -89,3 +89,12 @@ func (a *redfishVirtualMediaAccessDetails) VendorInterface() string {
 func (a *redfishVirtualMediaAccessDetails) SupportsSecureBoot() bool {
 	return true
 }
+
+func (a *redfishVirtualMediaAccessDetails) NeedsReset() bool {
+        return false
+}
+
+func (a *redfishVirtualMediaAccessDetails) ResetSteps() []CleanStep {
+        var cleanSteps []CleanStep
+        return cleanSteps
+}
