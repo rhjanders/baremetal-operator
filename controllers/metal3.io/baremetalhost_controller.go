@@ -1355,7 +1355,10 @@ func (r *BareMetalHostReconciler) checkServicing(prov provisioner.Provisioner, i
 		servicingData.TargetFirmwareSettings = hfs.Spec.Settings
 	}
 
-	dirty := fwDirty || hfsDirty
+	// Check the value of hostUpdatePolicy to determine if servicing should run
+	if servicingData.HostUpdatePolicy == "onReboot" {
+		dirty := fwDirty || hfsDirty
+	}
 
 	// Even if settings are clean, we need to check the result of the current servicing.
 	if !dirty && info.host.Status.OperationalStatus != metal3api.OperationalStatusServicing && info.host.Status.ErrorType != metal3api.ServicingError {

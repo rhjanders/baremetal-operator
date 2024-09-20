@@ -111,6 +111,7 @@ type ServicingData struct {
 	FirmwareConfig         *metal3api.FirmwareConfig
 	TargetFirmwareSettings metal3api.DesiredSettingsMap
 	ActualFirmwareSettings metal3api.SettingsMap
+	HostUpdatePolicy	*metal3api.HostUpdatePolicy
 	// TargetFirmwareComponents []metal3api.FirmwareUpdate
 }
 
