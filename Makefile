@@ -329,6 +329,7 @@ vendor:
 	cd apis; go mod vendor
 	cd pkg/hardwareutils; go mod vendor
 	cd hack/tools; go mod vendor
+	cd test; go mod vendor
 	go mod vendor
 
 ## --------------------------------------
