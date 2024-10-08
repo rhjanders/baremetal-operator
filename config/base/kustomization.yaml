@@ -15,6 +15,7 @@ resources:
 - crds/bases/metal3.io_bmceventsubscriptions.yaml
 - crds/bases/metal3.io_hardwaredata.yaml
 - crds/bases/metal3.io_dataimages.yaml
+- crds/bases/metal3.io_hostupdatepolicies.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

@@ -2,7 +2,7 @@ RUN_NAMESPACE = metal3
 GO_TEST_FLAGS = $(TEST_FLAGS)
 DEBUG = --debug
 COVER_PROFILE = cover.out
-GO_VERSION ?= 1.22.6
+GO_VERSION ?= 1.22.7
 
 ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
@@ -25,6 +25,7 @@ KUSTOMIZE = tools/bin/kustomize
 CONTROLLER_GEN = tools/bin/controller-gen
 GINKGO = tools/bin/ginkgo
 GINKGO_VER = v2.17.1
+DEPLOY_CLI = tools/bin/deploy-cli
 
 # See pkg/version.go for details
 SOURCE_GIT_COMMIT ?= $(shell git rev-parse --short HEAD)
@@ -62,7 +63,6 @@ GOLANGCI_LINT_BIN := golangci-lint
 GOLANGCI_LINT_VER := v1.56.2
 GOLANGCI_LINT := $(abspath $(TOOLS_BIN_DIR)/$(GOLANGCI_LINT_BIN))
 GOLANGCI_LINT_PKG := github.com/golangci/golangci-lint/cmd/golangci-lint
-
 
 # to set multiple ginkgo skip flags, if any
 ifneq ($(strip $(GINKGO_SKIP)),)
@@ -192,6 +192,10 @@ $(CONTROLLER_GEN): hack/tools/go.mod
 
 $(KUSTOMIZE): hack/tools/go.mod
 	cd hack/tools; go build -o $(abspath $@) sigs.k8s.io/kustomize/kustomize/v5
+
+.PHONY: deploy-cli
+deploy-cli:
+	cd hack/tools/deploy-cli; go build -o $(abspath $(DEPLOY_CLI))
 
 .PHONY: build-e2e
 build-e2e:
@@ -325,6 +329,7 @@ vendor:
 	cd apis; go mod vendor
 	cd pkg/hardwareutils; go mod vendor
 	cd hack/tools; go mod vendor
+	cd test; go mod vendor
 	go mod vendor
 
 ## --------------------------------------
