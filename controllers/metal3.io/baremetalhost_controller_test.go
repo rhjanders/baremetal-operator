@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -2845,16 +2846,13 @@ func TestHFSEmptyStatusSettings(t *testing.T) {
 			{Type: "Valid", Status: "True", Reason: "Success"},
 		},
 	}
-
 	err := r.Update(context.TODO(), hfs)
 	assert.NoError(t, err)
-
 	tryReconcile(t, r, host,
 		func(host *metal3api.BareMetalHost, result reconcile.Result) bool {
 			return host.Status.Provisioning.State == metal3api.StatePreparing
 		},
 	)
-
 	// Clear the change, it will no longer be blocked
 	hfs.Status = metal3api.HostFirmwareSettingsStatus{
 		Conditions: []metav1.Condition{
