@@ -1380,9 +1380,11 @@ func (r *BareMetalHostReconciler) checkServicing(prov provisioner.Provisioner, i
 		info.log.Info(fmt.Sprintf("janders-debug: in checkServicing(). HostUpdatePolicy value:  %+v", hup))
 		if hup.Spec.FirmwareSettings == metal3api.HostUpdatePolicyOnReboot {
 			servicingData.LiveFirmwareSettingsAllowed = true
+			info.log.Info(fmt.Sprintf("janders-debug: in checkServicing(). hup.Spec.FirmwareSettings set to OnReboot, setting LiveFirmwareSettingsAllowed to  %+v", servicingData.LiveFirmwareSettingsAllowed))
 		}
 		if hup.Spec.FirmwareUpdates == metal3api.HostUpdatePolicyOnReboot {
 			servicingData.LiveFirmwareUpdateAllowed = true
+			info.log.Info(fmt.Sprintf("janders-debug: in checkServicing(). hup.Spec.FirmwareUpdates set to OnReboot, setting LiveFirmwareUpdateAllowed to  %+v", servicingData.LiveFirmwareUpdateAllowed))
 		}
 	}
 
@@ -1390,11 +1392,14 @@ func (r *BareMetalHostReconciler) checkServicing(prov provisioner.Provisioner, i
 		if !reflect.DeepEqual(info.host.Status.Provisioning.Firmware, info.host.Spec.Firmware) {
 			servicingData.FirmwareConfig = info.host.Spec.Firmware
 			fwDirty = true
+			info.log.Info(fmt.Sprintf("janders-debug: setting fwDirty to  %+v", fwDirty))
 		}
 	}
 
 	if servicingData.LiveFirmwareSettingsAllowed {
 		hfsDirty, hfs, err := r.getHostFirmwareSettings(info)
+  	info.log.Info(fmt.Sprintf("janders-debug: hfsDirty = %+v, hfs = %+v", hfsDirty, hfs))
+
 		if err != nil {
 			info.log.Info(fmt.Sprintf("janders-debug: r.getHostFirmwareSettings failed: %q", err))
 			return actionError{fmt.Errorf("could not determine updated settings: %w", err)}, false
@@ -1406,10 +1411,12 @@ func (r *BareMetalHostReconciler) checkServicing(prov provisioner.Provisioner, i
 	}
 
 	dirty := fwDirty || hfsDirty
+	info.log.Info(fmt.Sprintf("janders-debug: dirty is: %+v", dirty))
 
 	// Even if settings are clean, we need to check the result of the current servicing.
 	if !dirty && info.host.Status.OperationalStatus != metal3api.OperationalStatusServicing && info.host.Status.ErrorType != metal3api.ServicingError {
 		// If nothing is going on, return control to the power management.
+		info.log.Info(fmt.Sprintf("janders-debug: dirty is %+v, info.host.Status.OperationalStatus is %+v, info.host.Status.ErrorType is %+v", dirty, info.host.Status.OperationalStatus, info.host.Status.ErrorType))
 		info.log.Info("janders-debug: nothing happening, return control to the power management (return nil, false)")
 		return nil, false
 	}
