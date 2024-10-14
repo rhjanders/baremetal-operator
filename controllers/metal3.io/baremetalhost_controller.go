@@ -1397,9 +1397,10 @@ func (r *BareMetalHostReconciler) checkServicing(prov provisioner.Provisioner, i
 	}
 
 	if servicingData.LiveFirmwareSettingsAllowed {
-		hfsDirty, hfs, err := r.getHostFirmwareSettings(info)
-  	info.log.Info(fmt.Sprintf("janders-debug: hfsDirty = %+v, hfs = %+v", hfsDirty, hfs))
-
+		var hfs *metal3api.HostFirmwareSettings
+		var err error
+		hfsDirty, hfs, err = r.getHostFirmwareSettings(info)
+		info.log.Info(fmt.Sprintf("janders-debug: hfsDirty = %+v, hfs = %+v", hfsDirty, hfs))
 		if err != nil {
 			info.log.Info(fmt.Sprintf("janders-debug: r.getHostFirmwareSettings failed: %q", err))
 			return actionError{fmt.Errorf("could not determine updated settings: %w", err)}, false
