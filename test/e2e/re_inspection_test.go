@@ -1,3 +1,6 @@
+//go:build e2e
+// +build e2e
+
 package e2e
 
 import (
@@ -106,7 +109,7 @@ var _ = Describe("Re-Inspection", Label("required", "re-inspection"), func() {
 	})
 
 	AfterEach(func() {
-		DumpResources(ctx, clusterProxy, namespace.Name, path.Join(artifactFolder, specName))
+		DumpResources(ctx, e2eConfig, clusterProxy, namespace.Name, path.Join(artifactFolder, specName))
 		if !skipCleanup {
 			cleanup(ctx, clusterProxy, namespace, cancelWatches, e2eConfig.GetIntervals("default", "wait-namespace-deleted")...)
 		}
