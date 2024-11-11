@@ -1,6 +1,6 @@
 module github.com/metal3-io/baremetal-operator/test
 
-go 1.22.8
+go 1.22.7
 
 require (
 	github.com/cert-manager/cert-manager v1.16.1
