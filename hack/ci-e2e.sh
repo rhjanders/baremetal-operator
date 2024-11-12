@@ -84,9 +84,14 @@ rm /tmp/bmo-e2e.tar
 # This IP is defined by the network we created above.
 IP_ADDRESS="192.168.222.1"
 
-pushd "${REPO_ROOT}/test/createVM" || exit 1
-go run main.go --yaml-source-file "${E2E_BMCS_CONF_FILE}"
-popd
+# This IP is also defined by the network above, and is used consistently in all of
+# our e2e overlays
+export IRONIC_PROVISIONING_IP="192.168.222.199"
+
+# Build vbmctl
+make build-vbmctl
+# Create VMs to act as BMHs in the tests.
+./bin/vbmctl --yaml-source-file "${E2E_BMCS_CONF_FILE}"
 
 if [[ "${BMO_E2E_EMULATOR}" == "vbmc" ]]; then
   # Start VBMC

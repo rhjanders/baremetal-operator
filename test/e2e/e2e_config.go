@@ -1,3 +1,6 @@
+//go:build e2e
+// +build e2e
+
 package e2e
 
 import (
@@ -152,4 +155,16 @@ func (c *Config) GetVariable(varName string) string {
 	value, ok := c.Variables[varName]
 	Expect(ok).To(BeTrue(), fmt.Sprintf("Configuration variable '%s' not found", varName))
 	return value
+}
+
+// GetBoolVariable returns a variable from environment variables or from the e2e config file as boolean.
+func (c *Config) GetBoolVariable(varName string) bool {
+	value := c.GetVariable(varName)
+	falseValues := []string{"", "false", "no"}
+	for _, falseVal := range falseValues {
+		if strings.EqualFold(value, falseVal) {
+			return false
+		}
+	}
+	return true
 }

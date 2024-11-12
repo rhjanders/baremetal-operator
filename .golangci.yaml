@@ -1,10 +1,13 @@
 run:
-  deadline: 5m
+  deadline: 10m
   skip-dirs:
   - mock*
   skip-files:
   - "zz_generated.*\\.go$"
   - ".*conversion.*\\.go$"
+  build-tags:
+  - e2e
+  - vbmctl
 linters:
   disable-all: true
   enable:
