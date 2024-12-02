@@ -224,7 +224,7 @@ func (r *BareMetalHostReconciler) Reconcile(ctx context.Context, request ctrl.Re
 			msg = err.Error()
 		}
 		provisionerNotReady.Inc()
-		reqLogger.Info("provisioner is not ready", "Error:", msg, "RequeueAfter:", provisionerNotReadyRetryDelay)
+		reqLogger.Info("provisioner is not ready", "Error", msg, "RequeueAfter", provisionerNotReadyRetryDelay)
 		return ctrl.Result{Requeue: true, RequeueAfter: provisionerNotReadyRetryDelay}, nil
 	}
 
@@ -1181,9 +1181,12 @@ func (r *BareMetalHostReconciler) actionPreparing(prov provisioner.Provisioner, 
 			info.log.Info("handling cleaning error in controller")
 			clearHostProvisioningSettings(info.host)
 		}
-		if hfcDirty {
+		if hfcDirty && hfc.Status.Updates != nil {
 			info.log.Info("handling cleaning error during firmware update")
 			hfc.Status.Updates = nil
+			if err := r.Status().Update(info.ctx, hfc); err != nil {
+				return actionError{errors.Wrap(err, "failed to update hostfirmwarecomponents status")}
+			}
 		}
 		return recordActionFailure(info, metal3api.PreparationError, provResult.ErrorMessage)
 	}
@@ -1312,7 +1315,7 @@ func clearHostProvisioningSettings(host *metal3api.BareMetalHost) {
 }
 
 func (r *BareMetalHostReconciler) actionDeprovisioning(prov provisioner.Provisioner, info *reconcileInfo) actionResult {
-	if info.host.Status.Provisioning.Image.URL != "" {
+	if info.host.Status.Provisioning.Image.URL != "" || info.host.Status.Provisioning.CustomDeploy != nil {
 		// Adopt the host in case it has been re-registered during the
 		// deprovisioning process before it completed
 		provResult, err := prov.Adopt(
