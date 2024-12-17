@@ -74,36 +74,44 @@ const (
 
 // Bootstrap providers.
 const (
-	KubeadmBootstrapProviderName           = "kubeadm"
-	TalosBootstrapProviderName             = "talos"
-	MicroK8sBootstrapProviderName          = "microk8s"
-	OracleCloudNativeBootstrapProviderName = "ocne"
-	KubeKeyK3sBootstrapProviderName        = "kubekey-k3s"
-	RKE2BootstrapProviderName              = "rke2"
-	K0smotronBootstrapProviderName         = "k0sproject-k0smotron"
+	KubeadmBootstrapProviderName             = "kubeadm"
+	TalosBootstrapProviderName               = "talos"
+	MicroK8sBootstrapProviderName            = "microk8s"
+	OracleCloudNativeBootstrapProviderName   = "ocne"
+	KubeKeyK3sBootstrapProviderName          = "kubekey-k3s"
+	RKE2BootstrapProviderName                = "rke2"
+	K0smotronBootstrapProviderName           = "k0sproject-k0smotron"
+	CanonicalKubernetesBootstrapProviderName = "canonical-kubernetes"
 )
 
 // ControlPlane providers.
 const (
-	KubeadmControlPlaneProviderName           = "kubeadm"
-	TalosControlPlaneProviderName             = "talos"
-	MicroK8sControlPlaneProviderName          = "microk8s"
-	NestedControlPlaneProviderName            = "nested"
-	OracleCloudNativeControlPlaneProviderName = "ocne"
-	KubeKeyK3sControlPlaneProviderName        = "kubekey-k3s"
-	KamajiControlPlaneProviderName            = "kamaji"
-	RKE2ControlPlaneProviderName              = "rke2"
-	K0smotronControlPlaneProviderName         = "k0sproject-k0smotron"
+	KubeadmControlPlaneProviderName             = "kubeadm"
+	TalosControlPlaneProviderName               = "talos"
+	MicroK8sControlPlaneProviderName            = "microk8s"
+	NestedControlPlaneProviderName              = "nested"
+	OracleCloudNativeControlPlaneProviderName   = "ocne"
+	KubeKeyK3sControlPlaneProviderName          = "kubekey-k3s"
+	KamajiControlPlaneProviderName              = "kamaji"
+	RKE2ControlPlaneProviderName                = "rke2"
+	K0smotronControlPlaneProviderName           = "k0sproject-k0smotron"
+	CanonicalKubernetesControlPlaneProviderName = "canonical-kubernetes"
 )
 
 // IPAM providers.
 const (
 	InClusterIPAMProviderName = "in-cluster"
+	NutanixIPAMProviderName   = "nutanix"
 )
 
 // Add-on providers.
 const (
 	HelmAddonProviderName = "helm"
+)
+
+// Runtime extensions providers.
+const (
+	NutanixRuntimeExtensionsProviderName = "nutanix"
 )
 
 // Other.
@@ -356,6 +364,11 @@ func (p *providersClient) defaults() []Provider {
 			url:          "https://github.com/k0sproject/k0smotron/releases/latest/bootstrap-components.yaml",
 			providerType: clusterctlv1.BootstrapProviderType,
 		},
+		&provider{
+			name:         CanonicalKubernetesBootstrapProviderName,
+			url:          "https://github.com/canonical/cluster-api-k8s/releases/latest/bootstrap-components.yaml",
+			providerType: clusterctlv1.BootstrapProviderType,
+		},
 
 		// ControlPlane providers
 		&provider{
@@ -403,11 +416,21 @@ func (p *providersClient) defaults() []Provider {
 			url:          "https://github.com/k0sproject/k0smotron/releases/latest/control-plane-components.yaml",
 			providerType: clusterctlv1.ControlPlaneProviderType,
 		},
+		&provider{
+			name:         CanonicalKubernetesControlPlaneProviderName,
+			url:          "https://github.com/canonical/cluster-api-k8s/releases/latest/control-plane-components.yaml",
+			providerType: clusterctlv1.ControlPlaneProviderType,
+		},
 
 		// IPAM providers
 		&provider{
 			name:         InClusterIPAMProviderName,
 			url:          "https://github.com/kubernetes-sigs/cluster-api-ipam-provider-in-cluster/releases/latest/ipam-components.yaml",
+			providerType: clusterctlv1.IPAMProviderType,
+		},
+		&provider{
+			name:         NutanixIPAMProviderName,
+			url:          "https://github.com/nutanix-cloud-native/cluster-api-ipam-provider-nutanix/releases/latest/ipam-components.yaml",
 			providerType: clusterctlv1.IPAMProviderType,
 		},
 
@@ -416,6 +439,13 @@ func (p *providersClient) defaults() []Provider {
 			name:         HelmAddonProviderName,
 			url:          "https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm/releases/latest/addon-components.yaml",
 			providerType: clusterctlv1.AddonProviderType,
+		},
+
+		// Runtime extensions providers
+		&provider{
+			name:         NutanixRuntimeExtensionsProviderName,
+			url:          "https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/releases/latest/runtime-extensions-components.yaml",
+			providerType: clusterctlv1.RuntimeExtensionProviderType,
 		},
 	}
 
