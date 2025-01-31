@@ -28,6 +28,7 @@ go.work.sum
 *~
 *.tmp
 .DS_Store
+.zed*
 
 # Tilt files.
 .tiltbuild
@@ -56,6 +57,3 @@ config/overlays/temp
 .devcontainer
 # Python venv
 .venv
-
-# release-notes
-/releasenotes
