@@ -5,7 +5,7 @@ go 1.22.4
 require (
 	github.com/go-logr/logr v1.4.2
 	github.com/google/safetext v0.0.0-20230106111101-7156a760e523
-	github.com/gophercloud/gophercloud/v2 v2.4.0
+	github.com/gophercloud/gophercloud/v2 v2.5.0
 	github.com/metal3-io/baremetal-operator/apis v0.5.1
 	github.com/metal3-io/baremetal-operator/pkg/hardwareutils v0.5.1
 	github.com/onsi/gomega v1.36.2
@@ -14,13 +14,13 @@ require (
 	github.com/stretchr/testify v1.10.0
 	go.etcd.io/etcd/client/pkg/v3 v3.5.18
 	go.uber.org/zap v1.27.0
-	k8s.io/api v0.31.5
-	k8s.io/apimachinery v0.31.5
-	k8s.io/client-go v0.31.5
-	k8s.io/component-base v0.31.5
+	k8s.io/api v0.31.6
+	k8s.io/apimachinery v0.31.6
+	k8s.io/client-go v0.31.6
+	k8s.io/component-base v0.31.6
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/utils v0.0.0-20240921022957-49e7df575cb6
-	sigs.k8s.io/controller-runtime v0.19.5
+	sigs.k8s.io/controller-runtime v0.19.6
 	sigs.k8s.io/yaml v1.4.0
 )
 
@@ -83,7 +83,7 @@ require (
 	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/oauth2 v0.21.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
-	golang.org/x/sys v0.29.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/term v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
@@ -96,8 +96,8 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/apiextensions-apiserver v0.31.5 // indirect
-	k8s.io/apiserver v0.31.5 // indirect
+	k8s.io/apiextensions-apiserver v0.31.6 // indirect
+	k8s.io/apiserver v0.31.6 // indirect
 	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.30.3 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
