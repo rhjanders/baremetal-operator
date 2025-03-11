@@ -86,6 +86,7 @@ type ManagementAccessData struct {
 	PreprovisioningImage       *PreprovisioningImage
 	PreprovisioningNetworkData string
 	HasCustomDeploy            bool
+	DisablePowerOff            bool
 }
 
 type AdoptData struct {
