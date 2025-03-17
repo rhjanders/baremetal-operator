@@ -1160,6 +1160,7 @@ func (p *ironicProvisioner) getConfigDrive(data provisioner.ProvisionData) (conf
 	// Retrieve instance specific user data (cloud-init, ignition, etc).
 	userData, err := data.HostConfig.UserData()
 	if err != nil {
+		p.publisher("UserDataNotFound", fmt.Sprintf("UserData not found"))
 		return configDrive, fmt.Errorf("could not retrieve user data: %w", err)
 	}
 	if userData != "" {
