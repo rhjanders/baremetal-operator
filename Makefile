@@ -1,7 +1,9 @@
+SHELL:=/usr/bin/env bash
 RUN_NAMESPACE = metal3
 GO_TEST_FLAGS = $(TEST_FLAGS)
 DEBUG = --debug
 COVER_PROFILE = cover.out
+GO := $(shell type -P go)
 GO_VERSION ?= 1.23.7
 
 ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
@@ -59,7 +61,7 @@ SKIP_RESOURCE_CLEANUP ?= false
 GINKGO_NOCOLOR ?= false
 
 GOLANGCI_LINT_BIN := golangci-lint
-GOLANGCI_LINT_VER := v1.60.3
+GOLANGCI_LINT_VER := v1.64.7
 GOLANGCI_LINT := $(abspath $(TOOLS_BIN_DIR)/$(GOLANGCI_LINT_BIN))
 GOLANGCI_LINT_PKG := github.com/golangci/golangci-lint/cmd/golangci-lint
 
@@ -340,15 +342,23 @@ vendor:
 ## Release
 ## --------------------------------------
 RELEASE_TAG ?= $(shell git describe --abbrev=0 2>/dev/null)
-RELEASE_NOTES_DIR := releasenotes
+ifneq (,$(findstring -,$(RELEASE_TAG)))
+    PRE_RELEASE=true
+endif
+# the previous release tag, e.g., v1.7.0, excluding pre-release tags
 PREVIOUS_TAG ?= $(shell git tag -l | grep -E "^v[0-9]+\.[0-9]+\.[0-9]+" | sort -V | grep -B1 $(RELEASE_TAG) | grep -E "^v[0-9]+\.[0-9]+\.[0-9]+$$" | head -n 1 2>/dev/null)
+RELEASE_DIR := out
+RELEASE_NOTES_DIR := releasenotes
+
+$(RELEASE_DIR):
+	mkdir -p $(RELEASE_DIR)/
 
 $(RELEASE_NOTES_DIR):
 	mkdir -p $(RELEASE_NOTES_DIR)/
 
 .PHONY: release-notes
-release-notes: $(RELEASE_NOTES_DIR)
-	go run ./hack/tools/release/notes.go --from=$(PREVIOUS_TAG) > $(RELEASE_NOTES_DIR)/$(RELEASE_TAG).md
+release-notes: $(RELEASE_NOTES_DIR) $(RELEASE_NOTES)
+	cd hack/tools && $(GO) run release/notes.go  --releaseTag=$(RELEASE_TAG) > $(realpath $(RELEASE_NOTES_DIR))/$(RELEASE_TAG).md
 
 go-version: ## Print the go version we use to compile our binaries and images
 	@echo $(GO_VERSION)

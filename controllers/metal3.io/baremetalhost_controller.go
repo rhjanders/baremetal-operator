@@ -796,7 +796,7 @@ func (r *BareMetalHostReconciler) registerHost(prov provisioner.Provisioner, inf
 
 	credsChanged := !info.host.Status.TriedCredentials.Match(*info.bmcCredsSecret)
 	if credsChanged {
-		info.log.Info("new credentials")
+		info.log.Info("new credentials", "newVersion", info.bmcCredsSecret.ResourceVersion)
 		info.host.UpdateTriedCredentials(*info.bmcCredsSecret)
 		info.postSaveCallbacks = append(info.postSaveCallbacks, updatedCredentials.Inc)
 		dirty = true
@@ -1530,6 +1530,17 @@ func (r *BareMetalHostReconciler) manageHostPower(prov provisioner.Provisioner, 
 	// FIXME(janders/dtantsur) it would be preferrable to pass in state as an argument
 	// however this falls outside the scope of this specific change.
 
+	// If DataImage exists, handle attachment/detachment
+	handleDataImage := isProvisioned && desiredPowerOnState && !info.host.Status.PoweredOn
+	if handleDataImage {
+		info.log.Info("provisioned host power on requested, handle dataImage if it exists")
+		dataImageResult := r.handleDataImageActions(prov, info)
+		if dataImageResult != nil {
+			// attaching/detaching DataImage failed, so we will requeue
+			return dataImageResult
+		}
+	}
+
 	if !info.host.Status.PoweredOn {
 		if _, suffixlessAnnotationExists := info.host.Annotations[metal3api.RebootAnnotationPrefix]; suffixlessAnnotationExists {
 			delete(info.host.Annotations, metal3api.RebootAnnotationPrefix)
@@ -1577,15 +1588,6 @@ func (r *BareMetalHostReconciler) manageHostPower(prov provisioner.Provisioner, 
 		"reboot process", desiredPowerOnState != info.host.Spec.Online)
 
 	if desiredPowerOnState {
-		if isProvisioned {
-			// If DataImage exists, handle attachment/detachment
-			dataImageResult := r.handleDataImageActions(prov, info)
-			if dataImageResult != nil {
-				// attaching/detaching DataImage failed, so we will requeue
-				return dataImageResult
-			}
-		}
-
 		provResult, err = prov.PowerOn(info.host.Status.ErrorType == metal3api.PowerManagementError)
 	} else {
 		if info.host.Status.ErrorCount > 0 {
@@ -2338,10 +2340,10 @@ func (r *BareMetalHostReconciler) reconcileHostData(ctx context.Context, host *m
 	// Check if Status is empty and status annotation is present
 	// Manually restore data.
 	if !r.hostHasStatus(host) {
-		reqLogger.Info("Reconstructing Status from hardwareData and annotation")
 		objStatus, err := r.getHostStatusFromAnnotation(host)
 
 		if err == nil && objStatus != nil {
+			reqLogger.Info("reconstructing Status from hardwareData and annotation")
 			// hardwareData takes predence over statusAnnotation data
 			if hardwareData.Spec.HardwareDetails != nil && objStatus.HardwareDetails != hardwareData.Spec.HardwareDetails {
 				objStatus.HardwareDetails = hardwareData.Spec.HardwareDetails
@@ -2361,7 +2363,7 @@ func (r *BareMetalHostReconciler) reconcileHostData(ctx context.Context, host *m
 			}
 			return ctrl.Result{Requeue: true}, nil
 		}
-		reqLogger.Info("No status cache found")
+		reqLogger.V(1).Info("no status cache found")
 	}
 	// The status annotation is unneeded, as the status subresource is
 	// already present. The annotation data will get outdated, so remove it.
