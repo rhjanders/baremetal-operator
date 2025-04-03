@@ -803,8 +803,6 @@ func (p *ironicProvisioner) setUpForProvisioning(ironicNode *nodes.Node, data pr
 		return result, err
 	}
 
-	p.log.Info("validating host settings")
-
 	errorMessage, err := p.validateNode(ironicNode)
 	if gophercloud.ResponseCodeIs(err, 409) {
 		p.log.Info("could not validate host during registration, busy")
@@ -1293,7 +1291,6 @@ func (p *ironicProvisioner) Provision(data provisioner.ProvisionData, forceReboo
 
 		// After it is available, we need to start provisioning by
 		// setting the state to "active".
-		p.log.Info("making host active")
 
 		configDrive, err := p.getConfigDrive(data)
 		if err != nil {
@@ -1330,9 +1327,9 @@ func (p *ironicProvisioner) Provision(data provisioner.ProvisionData, forceReboo
 
 	default:
 		// wait states like cleaning and clean wait
-		p.log.Info("waiting for host to become available",
+		p.log.Info("waiting for host to become active or available",
 			"state", ironicNode.ProvisionState,
-			"deploy step", ironicNode.DeployStep)
+			"deploy step", ironicNode.DeployStep, "clean step", ironicNode.CleanStep)
 		return operationContinuing(provisionRequeueDelay)
 	}
 }
@@ -1532,6 +1529,7 @@ func (p *ironicProvisioner) Delete() (result provisioner.Result, err error) {
 // deletion operation is completed.
 func (p *ironicProvisioner) Detach() (result provisioner.Result, err error) {
 	// Currently the same behavior as Delete()
+	p.log.Info("removing the node for detachment", "node", p.nodeID)
 	return p.Delete()
 }
 

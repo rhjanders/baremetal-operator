@@ -1,3 +1,6 @@
+# github.com/blang/semver v3.5.1+incompatible
+## explicit
+github.com/blang/semver
 # github.com/blang/semver/v4 v4.0.0
 ## explicit; go 1.14
 github.com/blang/semver/v4
@@ -39,6 +42,12 @@ github.com/google/gnostic-models/compiler
 github.com/google/gnostic-models/extensions
 github.com/google/gnostic-models/jsonschema
 github.com/google/gnostic-models/openapiv2
+# github.com/google/go-github v17.0.0+incompatible
+## explicit
+github.com/google/go-github/github
+# github.com/google/go-querystring v1.1.0
+## explicit; go 1.10
+github.com/google/go-querystring/query
 # github.com/google/gofuzz v1.2.0
 ## explicit; go 1.12
 github.com/google/gofuzz
@@ -107,6 +116,10 @@ golang.org/x/net/http2
 golang.org/x/net/http2/hpack
 golang.org/x/net/idna
 golang.org/x/net/internal/httpcommon
+# golang.org/x/oauth2 v0.27.0
+## explicit; go 1.23.0
+golang.org/x/oauth2
+golang.org/x/oauth2/internal
 # golang.org/x/sync v0.12.0
 ## explicit; go 1.23.0
 golang.org/x/sync/errgroup
