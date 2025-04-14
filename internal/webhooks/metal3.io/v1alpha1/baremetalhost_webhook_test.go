@@ -1,5 +1,6 @@
 /*
 Copyright 2019 The Kubernetes Authors.
+Copyright 2025 The Metal3 Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,13 +15,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package webhooks
 
 import (
 	"context"
 	"strings"
 	"testing"
 
+	metal3api "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -37,26 +39,27 @@ func errorContains(out error, want string) bool {
 func TestBareMetalHostCreate(t *testing.T) {
 	tests := []struct {
 		name      string
-		bmh       *BareMetalHost
+		bmh       *metal3api.BareMetalHost
 		wantedErr string
 	}{
 		{
 			name: "valid",
-			bmh: &BareMetalHost{TypeMeta: metav1.TypeMeta{
+			bmh: &metal3api.BareMetalHost{TypeMeta: metav1.TypeMeta{
 				Kind:       "BareMetalHost",
 				APIVersion: "metal3.io/v1alpha1",
 			}, ObjectMeta: metav1.ObjectMeta{
 				Name:      "test",
 				Namespace: "test-namespace",
-			}, Spec: BareMetalHostSpec{}},
+			}, Spec: metal3api.BareMetalHostSpec{}},
 			wantedErr: "",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			webhook := &BareMetalHost{}
 			ctx := context.Background()
-			if _, err := tt.bmh.ValidateCreate(ctx, tt.bmh); !errorContains(err, tt.wantedErr) {
+			if _, err := webhook.ValidateCreate(ctx, tt.bmh); !errorContains(err, tt.wantedErr) {
 				t.Errorf("BareMetalHost.ValidateCreate() error = %v, wantErr %v", err, tt.wantedErr)
 			}
 		})
@@ -66,34 +69,35 @@ func TestBareMetalHostCreate(t *testing.T) {
 func TestBareMetalHostUpdate(t *testing.T) {
 	tests := []struct {
 		name      string
-		bmh       *BareMetalHost
-		old       *BareMetalHost
+		bmh       *metal3api.BareMetalHost
+		old       *metal3api.BareMetalHost
 		wantedErr string
 	}{
 		{
 			name: "valid",
-			bmh: &BareMetalHost{TypeMeta: metav1.TypeMeta{
+			bmh: &metal3api.BareMetalHost{TypeMeta: metav1.TypeMeta{
 				Kind:       "BareMetalHost",
 				APIVersion: "metal3.io/v1alpha1",
 			}, ObjectMeta: metav1.ObjectMeta{
 				Name:      "test",
 				Namespace: "test-namespace",
-			}, Spec: BareMetalHostSpec{}},
-			old: &BareMetalHost{TypeMeta: metav1.TypeMeta{
+			}, Spec: metal3api.BareMetalHostSpec{}},
+			old: &metal3api.BareMetalHost{TypeMeta: metav1.TypeMeta{
 				Kind:       "BareMetalHost",
 				APIVersion: "metal3.io/v1alpha1",
 			}, ObjectMeta: metav1.ObjectMeta{
 				Name:      "test",
 				Namespace: "test-namespace",
-			}, Spec: BareMetalHostSpec{}},
+			}, Spec: metal3api.BareMetalHostSpec{}},
 			wantedErr: "",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			webhook := &BareMetalHost{}
 			ctx := context.Background()
-			if _, err := tt.old.ValidateUpdate(ctx, tt.old, tt.bmh); !errorContains(err, tt.wantedErr) {
+			if _, err := webhook.ValidateUpdate(ctx, tt.old, tt.bmh); !errorContains(err, tt.wantedErr) {
 				t.Errorf("BareMetalHost.ValidateUpdate() error = %v, wantErr %v", err, tt.wantedErr)
 			}
 		})

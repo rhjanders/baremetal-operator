@@ -1,9 +1,24 @@
-package v1alpha1
+/*
+Copyright 2025 The Metal3 Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package webhooks
 
 import (
 	"fmt"
 	"testing"
 
+	metal3api "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -51,41 +66,41 @@ func TestValidateCreate(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		newBMH    *BareMetalHost
-		oldBMH    *BareMetalHost
+		newBMH    *metal3api.BareMetalHost
+		oldBMH    *metal3api.BareMetalHost
 		wantedErr string
 	}{
 		{
 			name:      "valid",
-			newBMH:    &BareMetalHost{TypeMeta: tm, ObjectMeta: om, Spec: BareMetalHostSpec{}},
+			newBMH:    &metal3api.BareMetalHost{TypeMeta: tm, ObjectMeta: om, Spec: metal3api.BareMetalHostSpec{}},
 			oldBMH:    nil,
 			wantedErr: "",
 		},
 		{
 			name:      "invalidName",
-			newBMH:    &BareMetalHost{TypeMeta: tm, ObjectMeta: inom, Spec: BareMetalHostSpec{}},
+			newBMH:    &metal3api.BareMetalHost{TypeMeta: tm, ObjectMeta: inom, Spec: metal3api.BareMetalHostSpec{}},
 			oldBMH:    nil,
 			wantedErr: "BareMetalHost resource name cannot contain characters other than [A-Za-z0-9._-]",
 		},
 		{
 			name:      "invalidName2",
-			newBMH:    &BareMetalHost{TypeMeta: tm, ObjectMeta: inom2, Spec: BareMetalHostSpec{}},
+			newBMH:    &metal3api.BareMetalHost{TypeMeta: tm, ObjectMeta: inom2, Spec: metal3api.BareMetalHostSpec{}},
 			oldBMH:    nil,
 			wantedErr: "BareMetalHost resource name cannot be a UUID",
 		},
 		{
 			name: "invalidRAID",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
+				Spec: metal3api.BareMetalHostSpec{
 					BootMACAddress: "01:02:03:04:05:06",
-					BMC: BMCDetails{
+					BMC: metal3api.BMCDetails{
 						Address:         "irmc:127.0.1.1",
 						CredentialsName: "test1",
 					},
-					RAID: &RAIDConfig{
-						HardwareRAIDVolumes: []HardwareRAIDVolume{
+					RAID: &metal3api.RAIDConfig{
+						HardwareRAIDVolumes: []metal3api.HardwareRAIDVolume{
 							{
 								SizeGibibytes:         nil,
 								Level:                 "",
@@ -94,7 +109,7 @@ func TestValidateCreate(t *testing.T) {
 								NumberOfPhysicalDisks: nil,
 							},
 						},
-						SoftwareRAIDVolumes: []SoftwareRAIDVolume{
+						SoftwareRAIDVolumes: []metal3api.SoftwareRAIDVolume{
 							{
 								SizeGibibytes: nil,
 								Level:         "",
@@ -107,12 +122,12 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "supportBMCType",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
+				Spec: metal3api.BareMetalHostSpec{
 					BootMACAddress: "01:02:03:04:05:06",
-					BMC: BMCDetails{
+					BMC: metal3api.BMCDetails{
 						Address:         "irmc:127.0.1.1",
 						CredentialsName: "test1",
 					},
@@ -122,11 +137,11 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "unsupportBMCType",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					BMC: BMCDetails{
+				Spec: metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
 						Address:         "test:127.0.1.1",
 						CredentialsName: "test1",
 					},
@@ -136,12 +151,12 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "RAIDWithSupportBMC",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					RAID: &RAIDConfig{
-						HardwareRAIDVolumes: []HardwareRAIDVolume{
+				Spec: metal3api.BareMetalHostSpec{
+					RAID: &metal3api.RAIDConfig{
+						HardwareRAIDVolumes: []metal3api.HardwareRAIDVolume{
 							{
 								SizeGibibytes:         nil,
 								Level:                 "",
@@ -152,7 +167,7 @@ func TestValidateCreate(t *testing.T) {
 						},
 					},
 					BootMACAddress: "01:02:03:04:05:06",
-					BMC: BMCDetails{
+					BMC: metal3api.BMCDetails{
 						Address:         "irmc://127.0.1.1",
 						CredentialsName: "test1",
 					},
@@ -162,12 +177,12 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "RAIDWithUnsupportBMC",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					RAID: &RAIDConfig{
-						HardwareRAIDVolumes: []HardwareRAIDVolume{
+				Spec: metal3api.BareMetalHostSpec{
+					RAID: &metal3api.RAIDConfig{
+						HardwareRAIDVolumes: []metal3api.HardwareRAIDVolume{
 							{
 								SizeGibibytes:         nil,
 								Level:                 "",
@@ -177,7 +192,7 @@ func TestValidateCreate(t *testing.T) {
 							},
 						},
 					},
-					BMC: BMCDetails{
+					BMC: metal3api.BMCDetails{
 						Address:         "ipmi://127.0.1.1",
 						CredentialsName: "test1",
 					},
@@ -187,15 +202,15 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "FirmwareWithSupportBMC",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					Firmware: &FirmwareConfig{
+				Spec: metal3api.BareMetalHostSpec{
+					Firmware: &metal3api.FirmwareConfig{
 						VirtualizationEnabled: &enable,
 					},
 					BootMACAddress: "01:02:03:04:05:06",
-					BMC: BMCDetails{
+					BMC: metal3api.BMCDetails{
 						Address:         "irmc://127.0.1.1",
 						CredentialsName: "test1",
 					},
@@ -205,14 +220,14 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "FirmwareWithUnsupportBMC",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					Firmware: &FirmwareConfig{
+				Spec: metal3api.BareMetalHostSpec{
+					Firmware: &metal3api.FirmwareConfig{
 						VirtualizationEnabled: &enable,
 					},
-					BMC: BMCDetails{
+					BMC: metal3api.BMCDetails{
 						Address:         "ipmi://127.0.1.1",
 						CredentialsName: "test1",
 					},
@@ -222,11 +237,11 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "BootMACAddressRequiredWithoutBootMACAddress",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					BMC: BMCDetails{
+				Spec: metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
 						Address:         "libvirt://127.0.1.1",
 						CredentialsName: "test1",
 					},
@@ -236,11 +251,11 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "BootMACAddressRequiredWithBootMACAddress",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					BMC: BMCDetails{
+				Spec: metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
 						Address:         "libvirt://127.0.1.1",
 						CredentialsName: "test1",
 					},
@@ -251,64 +266,64 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "BootMACAddressRequired",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					BMC: BMCDetails{
+				Spec: metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
 						Address:         "libvirt://127.0.1.1",
 						CredentialsName: "test1",
 					},
 					BootMACAddress: "00:00:00:00:00:00",
-					BootMode:       UEFISecureBoot,
+					BootMode:       metal3api.UEFISecureBoot,
 				}},
 			oldBMH:    nil,
 			wantedErr: "BMC driver libvirt does not support secure boot",
 		},
 		{
 			name: "InvalidBootMACAddress",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					BMC: BMCDetails{
+				Spec: metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
 						Address:         "irmc://127.0.1.1",
 						CredentialsName: "test1",
 					},
 					BootMACAddress: "00:00:00:00:00",
-					BootMode:       UEFISecureBoot,
+					BootMode:       metal3api.UEFISecureBoot,
 				}},
 			oldBMH:    nil,
 			wantedErr: "address 00:00:00:00:00: invalid MAC address",
 		},
 		{
 			name: "UEFISecureBootWithSupportBMC",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					BMC: BMCDetails{
+				Spec: metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
 						Address:         "irmc://127.0.1.1",
 						CredentialsName: "test1",
 					},
 					BootMACAddress: "00:00:00:00:00:00",
-					BootMode:       UEFISecureBoot,
+					BootMode:       metal3api.UEFISecureBoot,
 				}},
 			oldBMH:    nil,
 			wantedErr: "",
 		},
 		{
 			name: "'physicalDisks' in HardwareRAID without 'controller'.",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					BMC: BMCDetails{
+				Spec: metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
 						Address:         "redfish://127.0.0.1",
 						CredentialsName: "test1",
 					},
-					RAID: &RAIDConfig{
-						HardwareRAIDVolumes: []HardwareRAIDVolume{
+					RAID: &metal3api.RAIDConfig{
+						HardwareRAIDVolumes: []metal3api.HardwareRAIDVolume{
 							{
 								SizeGibibytes: nil,
 								Level:         "",
@@ -325,16 +340,16 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "'numberOfPhysicalDisks' not same as length of 'physicalDisks'",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					BMC: BMCDetails{
+				Spec: metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
 						Address:         "redfish://127.0.0.1",
 						CredentialsName: "test1",
 					},
-					RAID: &RAIDConfig{
-						HardwareRAIDVolumes: []HardwareRAIDVolume{
+					RAID: &metal3api.RAIDConfig{
+						HardwareRAIDVolumes: []metal3api.HardwareRAIDVolume{
 							{
 								SizeGibibytes:         nil,
 								Level:                 "",
@@ -353,99 +368,99 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "validDNSName",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					BMC: BMCDetails{
+				Spec: metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
 						Address: "ipmi://host-0.example.com.org:6223"}}},
 			oldBMH:    nil,
 			wantedErr: "",
 		},
 		{
 			name: "validDNSName2",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					BMC: BMCDetails{
+				Spec: metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
 						Address: "ipmi://baremetalhost"}}},
 			oldBMH:    nil,
 			wantedErr: "",
 		},
 		{
 			name: "validDNSName3",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					BMC: BMCDetails{
+				Spec: metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
 						Address: "ipmi://[fe80::fc33:62ff:fe83:8a76]:6233"}}},
 			oldBMH:    nil,
 			wantedErr: "",
 		},
 		{
 			name: "invalidDNSNameinvalidhyphenuse",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					BMC: BMCDetails{
+				Spec: metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
 						Address: "ipmi://-host.example.com.org"}}},
 			oldBMH:    nil,
 			wantedErr: "failed to parse BMC address information: BMC address hostname/IP : [-host.example.com.org] is invalid",
 		},
 		{
 			name: "invalidDNSNameinvalidcharacter",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					BMC: BMCDetails{
+				Spec: metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
 						Address: "ipmi://host+1.example.com.org"}}},
 			oldBMH:    nil,
 			wantedErr: "failed to parse BMC address information: BMC address hostname/IP : [host+1.example.com.org] is invalid",
 		},
 		{
 			name: "invalidDNSNameinvalidformat",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					BMC: BMCDetails{
+				Spec: metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
 						Address: "[@]host.example.com"}}},
 			oldBMH:    nil,
 			wantedErr: "failed to parse BMC address information: parse \"ipmi://[@]host.example.com\": net/url: invalid userinfo",
 		},
 		{
 			name: "invalidDNSNameinvalidbmc",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					BMC: BMCDetails{
+				Spec: metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
 						Address: "ipm:host.example.com:6223"}}},
 			oldBMH:    nil,
 			wantedErr: "Unknown BMC type 'ipm' for address ipm:host.example.com:6223",
 		},
 		{
 			name: "invalidDNSNameinvalidipv6",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					BMC: BMCDetails{
+				Spec: metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
 						Address: "ipmi://[fe80::fc33:62ff:fe33:8xff]:6223"}}},
 			oldBMH:    nil,
 			wantedErr: "failed to parse BMC address information: BMC address hostname/IP : [fe80::fc33:62ff:fe33:8xff] is invalid",
 		},
 		{
 			name: "validRootDeviceHint",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					RootDeviceHints: &RootDeviceHints{
+				Spec: metal3api.BareMetalHostSpec{
+					RootDeviceHints: &metal3api.RootDeviceHints{
 						DeviceName: "/dev/sda",
 					},
 				},
@@ -455,11 +470,11 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "validRootDeviceHintByPath",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					RootDeviceHints: &RootDeviceHints{
+				Spec: metal3api.BareMetalHostSpec{
+					RootDeviceHints: &metal3api.RootDeviceHints{
 						DeviceName: "/dev/disk/by-path/pci-0000:01:00.0-scsi-0:2:0:0",
 					},
 				},
@@ -469,11 +484,11 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "invalidRootDeviceHintByUUID",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					RootDeviceHints: &RootDeviceHints{
+				Spec: metal3api.BareMetalHostSpec{
+					RootDeviceHints: &metal3api.RootDeviceHints{
 						DeviceName: "/dev/disk/by-uuid/cdaacd50-3a4c-421c-91c0-fe9ba7b8b2f1",
 					},
 				},
@@ -483,11 +498,11 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "invalidRootDeviceHintNoPath",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					RootDeviceHints: &RootDeviceHints{
+				Spec: metal3api.BareMetalHostSpec{
+					RootDeviceHints: &metal3api.RootDeviceHints{
 						DeviceName: "sda",
 					},
 				},
@@ -497,15 +512,15 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "invalidImageURL",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					BMC: BMCDetails{
+				Spec: metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
 						Address:         "redfish://127.0.0.1",
 						CredentialsName: "test1",
 					},
-					Image: &Image{
+					Image: &metal3api.Image{
 						URL: "test1",
 					},
 				},
@@ -515,13 +530,13 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "validStatusAnnotation",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta: tm,
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "test-namespace",
 					Annotations: map[string]string{
-						StatusAnnotation: `{"operationalStatus": "OK"}`,
+						metal3api.StatusAnnotation: `{"operationalStatus": "OK"}`,
 					},
 				},
 			},
@@ -530,13 +545,13 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "invalidFieldStatusAnnotation",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta: tm,
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "test-namespace",
 					Annotations: map[string]string{
-						StatusAnnotation: `{"InvalidField":"NotOK"}`,
+						metal3api.StatusAnnotation: `{"InvalidField":"NotOK"}`,
 					},
 				},
 			},
@@ -545,13 +560,13 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "invalidOpstatusStatusAnnotation",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta: tm,
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "test-namespace",
 					Annotations: map[string]string{
-						StatusAnnotation: `{"operationalStatus":"NotOK"}`,
+						metal3api.StatusAnnotation: `{"operationalStatus":"NotOK"}`,
 					},
 				},
 			},
@@ -560,13 +575,13 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "invalidErrtypeStatusAnnotation",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta: tm,
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "test-namespace",
 					Annotations: map[string]string{
-						StatusAnnotation: `{"errorType":"No Error"}`,
+						metal3api.StatusAnnotation: `{"errorType":"No Error"}`,
 					},
 				},
 			},
@@ -575,13 +590,13 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "invalidFormatStatusAnnotation",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta: tm,
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "test-namespace",
 					Annotations: map[string]string{
-						StatusAnnotation: `{"operationalStatus":"OK"`,
+						metal3api.StatusAnnotation: `{"operationalStatus":"OK"`,
 					},
 				},
 			},
@@ -590,13 +605,13 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "invalidValueRebootAnnotationPrefix",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta: tm,
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "test-namespace",
 					Annotations: map[string]string{
-						RebootAnnotationPrefix: `{"mode":"medium"}`,
+						metal3api.RebootAnnotationPrefix: `{"mode":"medium"}`,
 					},
 				},
 			},
@@ -605,13 +620,13 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "invalidValueRebootAnnotationWithKey",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta: tm,
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "test-namespace",
 					Annotations: map[string]string{
-						RebootAnnotationPrefix + "/my-key": `{"mode":"medium"}`,
+						metal3api.RebootAnnotationPrefix + "/my-key": `{"mode":"medium"}`,
 					},
 				},
 			},
@@ -620,13 +635,13 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "inspectionNotDisabledHardwareDetailsAnnotation",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta: tm,
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "test-namespace",
 					Annotations: map[string]string{
-						HardwareDetailsAnnotation: `{"systemVendor":{"manufacturer":"QEMU","productName":"Standard PC (Q35 + ICH9, 2009)","serialNumber":""},"firmware":{"bios":{"date":"","vendor":"","version":""}},"ramMebibytes":4096,"nics":[{"name":"eth0","model":"0x1af4 0x0001","mac":"00:b7:8b:bb:3d:f6","ip":"172.22.0.64","speedGbps":0,"vlanId":0,"pxe":true}],"storage":[{"name":"/dev/sda","rotational":true,"sizeBytes":53687091200,"vendor":"QEMU","model":"QEMU HARDDISK","serialNumber":"drive-scsi0-0-0-0","hctl":"6:0:0:0"}],"cpu":{"arch":"x86_64","model":"Intel Xeon E3-12xx v2 (IvyBridge)","clockMegahertz":2494.224,"flags":["foo"],"count":4},"hostname":"hwdAnnotation-0"}`,
+						metal3api.HardwareDetailsAnnotation: `{"systemVendor":{"manufacturer":"QEMU","productName":"Standard PC (Q35 + ICH9, 2009)","serialNumber":""},"firmware":{"bios":{"date":"","vendor":"","version":""}},"ramMebibytes":4096,"nics":[{"name":"eth0","model":"0x1af4 0x0001","mac":"00:b7:8b:bb:3d:f6","ip":"172.22.0.64","speedGbps":0,"vlanId":0,"pxe":true}],"storage":[{"name":"/dev/sda","rotational":true,"sizeBytes":53687091200,"vendor":"QEMU","model":"QEMU HARDDISK","serialNumber":"drive-scsi0-0-0-0","hctl":"6:0:0:0"}],"cpu":{"arch":"x86_64","model":"Intel Xeon E3-12xx v2 (IvyBridge)","clockMegahertz":2494.224,"flags":["foo"],"count":4},"hostname":"hwdAnnotation-0"}`,
 					},
 				},
 			},
@@ -635,14 +650,14 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "invalidFieldHardwareDetailsAnnotation",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta: tm,
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "test-namespace",
 					Annotations: map[string]string{
-						InspectAnnotationPrefix:   "disabled",
-						HardwareDetailsAnnotation: `{"INVALIDField":{"manufacturer":"QEMU","productName":"Standard PC (Q35 + ICH9, 2009)","serialNumber":""},"firmware":{"bios":{"date":"","vendor":"","version":""}},"ramMebibytes":4096,"nics":[{"name":"eth0","model":"0x1af4 0x0001","mac":"00:b7:8b:bb:3d:f6","ip":"172.22.0.64","speedGbps":0,"vlanId":0,"pxe":true}],"storage":[{"name":"/dev/sda","rotational":true,"sizeBytes":53687091200,"vendor":"QEMU","model":"QEMU HARDDISK","serialNumber":"drive-scsi0-0-0-0","hctl":"6:0:0:0"}],"cpu":{"arch":"x86_64","model":"Intel Xeon E3-12xx v2 (IvyBridge)","clockMegahertz":2494.224,"flags":["foo"],"count":4},"hostname":"hwdAnnotation-0"}`,
+						metal3api.InspectAnnotationPrefix:   "disabled",
+						metal3api.HardwareDetailsAnnotation: `{"INVALIDField":{"manufacturer":"QEMU","productName":"Standard PC (Q35 + ICH9, 2009)","serialNumber":""},"firmware":{"bios":{"date":"","vendor":"","version":""}},"ramMebibytes":4096,"nics":[{"name":"eth0","model":"0x1af4 0x0001","mac":"00:b7:8b:bb:3d:f6","ip":"172.22.0.64","speedGbps":0,"vlanId":0,"pxe":true}],"storage":[{"name":"/dev/sda","rotational":true,"sizeBytes":53687091200,"vendor":"QEMU","model":"QEMU HARDDISK","serialNumber":"drive-scsi0-0-0-0","hctl":"6:0:0:0"}],"cpu":{"arch":"x86_64","model":"Intel Xeon E3-12xx v2 (IvyBridge)","clockMegahertz":2494.224,"flags":["foo"],"count":4},"hostname":"hwdAnnotation-0"}`,
 					},
 				},
 			},
@@ -651,13 +666,13 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "invalidJsonHardwareDetailsAnnotation",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta: tm, ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "test-namespace",
 					Annotations: map[string]string{
-						InspectAnnotationPrefix:   "disabled",
-						HardwareDetailsAnnotation: `{"INVALIDField":{"manufacturer":"QEMU","productName":"Standard PC (Q35 + ICH9, 2009)","serialNumber":""},"firmware":{"bios":{"date":"","vendor":"","version":""}},"ramMebibytes":4096,"nics":[{"name":"eth0","model":"0x1af4 0x0001","mac":"00:b7:8b:bb:3d:f6","ip":"172.22.0.64","speedGbps":0,"vlanId":0,"pxe":true}],"storage":[{"name":"/dev/sda","rotational":true,"sizeBytes":53687091200,"vendor":"QEMU","model":"QEMU HARDDISK","serialNumber":"drive-scsi0-0-0-0","hctl":"6:0:0:0"}],"cpu":{"arch":"x86_64","model":"Intel Xeon E3-12xx v2 (IvyBridge)","clockMegahertz":2494.224,"flags":["foo"],"count":4},"hostname":"hwdAnnotation-0"`,
+						metal3api.InspectAnnotationPrefix:   "disabled",
+						metal3api.HardwareDetailsAnnotation: `{"INVALIDField":{"manufacturer":"QEMU","productName":"Standard PC (Q35 + ICH9, 2009)","serialNumber":""},"firmware":{"bios":{"date":"","vendor":"","version":""}},"ramMebibytes":4096,"nics":[{"name":"eth0","model":"0x1af4 0x0001","mac":"00:b7:8b:bb:3d:f6","ip":"172.22.0.64","speedGbps":0,"vlanId":0,"pxe":true}],"storage":[{"name":"/dev/sda","rotational":true,"sizeBytes":53687091200,"vendor":"QEMU","model":"QEMU HARDDISK","serialNumber":"drive-scsi0-0-0-0","hctl":"6:0:0:0"}],"cpu":{"arch":"x86_64","model":"Intel Xeon E3-12xx v2 (IvyBridge)","clockMegahertz":2494.224,"flags":["foo"],"count":4},"hostname":"hwdAnnotation-0"`,
 					},
 				},
 			},
@@ -666,13 +681,13 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "invalidValueInspectAnnotation",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta: tm,
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "test-namespace",
 					Annotations: map[string]string{
-						InspectAnnotationPrefix: "enabled",
+						metal3api.InspectAnnotationPrefix: "enabled",
 					},
 				},
 			},
@@ -681,10 +696,10 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "crossNamespaceUserData",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
+				Spec: metal3api.BareMetalHostSpec{
 					UserData: &corev1.SecretReference{
 						Name:      "test-secret",
 						Namespace: "different-namespace", // Different from host's namespace
@@ -696,10 +711,10 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "crossNamespaceNetworkData",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
+				Spec: metal3api.BareMetalHostSpec{
 					NetworkData: &corev1.SecretReference{
 						Name:      "test-secret",
 						Namespace: "different-namespace", // Different from host's namespace
@@ -711,10 +726,10 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "crossNamespaceMetaData",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
+				Spec: metal3api.BareMetalHostSpec{
 					MetaData: &corev1.SecretReference{
 						Name:      "test-secret",
 						Namespace: "different-namespace", // Different from host's namespace
@@ -726,10 +741,10 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "multipleSecretsCrossNamespace",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
+				Spec: metal3api.BareMetalHostSpec{
 					UserData: &corev1.SecretReference{
 						Name:      "test-secret1",
 						Namespace: "different-namespace1",
@@ -749,10 +764,10 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "sameNamespaceSecrets",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om, // namespace is "test-namespace"
-				Spec: BareMetalHostSpec{
+				Spec: metal3api.BareMetalHostSpec{
 					UserData: &corev1.SecretReference{
 						Name:      "test-secret1",
 						Namespace: "test-namespace", // Same as host's namespace
@@ -772,8 +787,8 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "disablePowerOff",
-			newBMH: &BareMetalHost{
-				Spec: BareMetalHostSpec{
+			newBMH: &metal3api.BareMetalHost{
+				Spec: metal3api.BareMetalHostSpec{
 					DisablePowerOff: true,
 					Online:          true,
 				},
@@ -782,8 +797,8 @@ func TestValidateCreate(t *testing.T) {
 		},
 		{
 			name: "disablePowerOffErr",
-			newBMH: &BareMetalHost{
-				Spec: BareMetalHostSpec{
+			newBMH: &metal3api.BareMetalHost{
+				Spec: metal3api.BareMetalHostSpec{
 					DisablePowerOff: true,
 					Online:          false,
 				},
@@ -793,9 +808,10 @@ func TestValidateCreate(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		webhook := &BareMetalHost{}
 		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.newBMH.validateHost(tt.newBMH); !errorArrContains(err, tt.wantedErr) {
-				t.Errorf("BareMetalHost.ValidateBareMetalHost() error = %v, wantErr %v", err, tt.wantedErr)
+			if err := webhook.validateHost(tt.newBMH); !errorArrContains(err, tt.wantedErr) {
+				t.Errorf("metal3api.BareMetalHost.Validatemetal3api.BareMetalHost() error = %v, wantErr %v", err, tt.wantedErr)
 			}
 		})
 	}
@@ -814,77 +830,78 @@ func TestValidateUpdate(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		newBMH    *BareMetalHost
-		oldBMH    *BareMetalHost
+		newBMH    *metal3api.BareMetalHost
+		oldBMH    *metal3api.BareMetalHost
 		wantedErr string
 	}{
 		{
 			name: "updateAddress",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					BMC: BMCDetails{
+				Spec: metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
 						Address: "test-address-changed"}}},
-			oldBMH: &BareMetalHost{
+			oldBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					BMC: BMCDetails{
+				Spec: metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
 						Address: "test-address"}}},
 			wantedErr: "BMC address can not be changed if the BMH is not in the Registering state, or if the BMH is not detached",
 		},
 		{
 			name: "updateAddressBMHRegistering",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					BMC: BMCDetails{
+				Spec: metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
 						Address: "test-address-changed"}},
-				Status: BareMetalHostStatus{
-					Provisioning: ProvisionStatus{
-						State: StateRegistering}}},
-			oldBMH: &BareMetalHost{
+				Status: metal3api.BareMetalHostStatus{
+					Provisioning: metal3api.ProvisionStatus{
+						State: metal3api.StateRegistering}}},
+			oldBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					BMC: BMCDetails{
+				Spec: metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
 						Address: "test-address"}}},
 			wantedErr: "",
 		},
 		{
 			name: "updateAddressBMHDetached",
-			newBMH: &BareMetalHost{
+			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					BMC: BMCDetails{
+				Spec: metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
 						Address: "test-address-changed"}},
-				Status: BareMetalHostStatus{
-					OperationalStatus: OperationalStatusDetached}},
-			oldBMH: &BareMetalHost{
+				Status: metal3api.BareMetalHostStatus{
+					OperationalStatus: metal3api.OperationalStatusDetached}},
+			oldBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,
 				ObjectMeta: om,
-				Spec: BareMetalHostSpec{
-					BMC: BMCDetails{
+				Spec: metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
 						Address: "test-address"}}},
 			wantedErr: "",
 		},
 		{
 			name: "updateBootMAC",
-			newBMH: &BareMetalHost{
-				TypeMeta: tm, ObjectMeta: om, Spec: BareMetalHostSpec{BootMACAddress: "test-mac-changed"}},
-			oldBMH: &BareMetalHost{
-				TypeMeta: tm, ObjectMeta: om, Spec: BareMetalHostSpec{BootMACAddress: "test-mac"}},
+			newBMH: &metal3api.BareMetalHost{
+				TypeMeta: tm, ObjectMeta: om, Spec: metal3api.BareMetalHostSpec{BootMACAddress: "test-mac-changed"}},
+			oldBMH: &metal3api.BareMetalHost{
+				TypeMeta: tm, ObjectMeta: om, Spec: metal3api.BareMetalHostSpec{BootMACAddress: "test-mac"}},
 			wantedErr: "bootMACAddress can not be changed once it is set",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.newBMH.validateChanges(tt.oldBMH, tt.newBMH); !errorArrContains(err, tt.wantedErr) {
-				t.Errorf("BareMetalHost.ValidateBareMetalHost() error = %v, wantErr %v", err, tt.wantedErr)
+			webhook := &BareMetalHost{}
+			if err := webhook.validateChanges(tt.oldBMH, tt.newBMH); !errorArrContains(err, tt.wantedErr) {
+				t.Errorf("metal3api.BareMetalHost.Validatemetal3api.BareMetalHost() error = %v, wantErr %v", err, tt.wantedErr)
 			}
 		})
 	}
