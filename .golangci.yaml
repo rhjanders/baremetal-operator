@@ -43,7 +43,7 @@ linters:
   - iface
   - importas
   - ineffassign
-  #- intrange
+  - intrange
   - loggercheck
   - makezero
   - mirror
@@ -65,7 +65,7 @@ linters:
   - staticcheck
   - stylecheck
   #- tagliatelle
-  #- testifylint
+  - testifylint
   - thelper
   - tparallel
   - typecheck
@@ -73,7 +73,7 @@ linters:
   - unparam
   - unused
   - usestdlibvars
-  #- usetesting
+  - usetesting
   - whitespace
   # Run with --fast=false for more extensive checks
   fast: true

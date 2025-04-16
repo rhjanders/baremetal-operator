@@ -1015,7 +1015,7 @@ func TestErrorCountClearedOnStateTransition(t *testing.T) {
 			hsm.ReconcileState(info)
 
 			assert.Equal(t, tt.TargetState, info.host.Status.Provisioning.State)
-			assert.Equal(t, info.host.Status.ErrorCount, 0)
+			assert.Equal(t, 0, info.host.Status.ErrorCount)
 		})
 	}
 }
@@ -1403,7 +1403,7 @@ func (p *mockProvisioner) GetFirmwareComponents() (components []metal3api.Firmwa
 	return components, nil
 }
 
-func (m *mockProvisioner) IsDataImageReady() (isNodeBusy bool, nodeError error) {
+func (p *mockProvisioner) GetDataImageStatus() (isImageAttached bool, err error) {
 	return false, nil
 }
 

@@ -1,5 +1,5 @@
 # Support FROM override
-ARG BUILD_IMAGE=docker.io/golang:1.23.7@sha256:1acb493b9f9dfdfe705042ce09e8ded908ce4fb342405ecf3ca61ce7f3b168c7
+ARG BUILD_IMAGE=docker.io/golang:1.23.8@sha256:a5339982f2e78b38b26ebbee35139854e184a4e90e1516f9f636371e720b727b
 ARG BASE_IMAGE=gcr.io/distroless/static:nonroot@sha256:9ecc53c269509f63c69a266168e4a687c7eb8c0cfd753bd8bfcaa4f58a90876f
 
 # Build the manager binary
@@ -9,14 +9,10 @@ WORKDIR /workspace
 
 # Bring in the go dependencies before anything else so we can take
 # advantage of caching these layers in future builds.
-COPY go.mod go.mod
-COPY go.sum go.sum
-COPY apis/go.mod apis/go.mod
-COPY apis/go.sum apis/go.sum
-COPY hack/tools/go.mod hack/tools/go.mod
-COPY hack/tools/go.sum hack/tools/go.sum
-COPY pkg/hardwareutils/go.mod pkg/hardwareutils/go.mod
-COPY pkg/hardwareutils/go.sum pkg/hardwareutils/go.sum
+COPY go.mod go.sum ./
+COPY apis/go.mod apis/go.sum apis/
+COPY hack/tools/go.mod hack/tools/go.sum hack/tools/
+COPY pkg/hardwareutils/go.mod pkg/hardwareutils/go.sum pkg/hardwareutils/
 RUN go mod download
 
 COPY . .
@@ -26,10 +22,17 @@ RUN CGO_ENABLED=0 GO111MODULE=on go build -a -o baremetal-operator main.go
 # BMO has a dependency preventing us to use the static one,
 # using the base one instead
 FROM $BASE_IMAGE
+
+# image.version is set during image build by automation
+LABEL org.opencontainers.image.authors="metal3-dev@googlegroups.com"
+LABEL org.opencontainers.image.description="This is the image for the Metal3 BareMetal Operator"
+LABEL org.opencontainers.image.documentation="https://book.metal3.io/bmo/introduction"
+LABEL org.opencontainers.image.licenses="Apache License 2.0"
+LABEL org.opencontainers.image.title="Metal3 BareMetal Operator"
+LABEL org.opencontainers.image.url="https://github.com/metal3-io/baremetal-operator"
+LABEL org.opencontainers.image.vendor="Metal3-io"
+
 WORKDIR /
 COPY --from=builder /workspace/baremetal-operator .
 USER nonroot:nonroot
 ENTRYPOINT ["/baremetal-operator"]
-
-LABEL io.k8s.display-name="Metal3 BareMetal Operator" \
-      io.k8s.description="This is the image for the Metal3 BareMetal Operator."
