@@ -1255,7 +1255,7 @@ k8s.io/utils/path
 k8s.io/utils/pointer
 k8s.io/utils/ptr
 k8s.io/utils/trace
-# libvirt.org/go/libvirt v1.11001.0
+# libvirt.org/go/libvirt v1.11002.0
 ## explicit; go 1.11
 libvirt.org/go/libvirt
 # sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.31.0
