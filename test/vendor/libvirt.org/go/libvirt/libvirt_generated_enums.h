@@ -376,6 +376,12 @@
 #  if !LIBVIR_CHECK_VERSION(7, 9, 0)
 #    define VIR_CONNECT_LIST_NODE_DEVICES_CAP_VPD (1 << 21)
 #  endif
+#  if !LIBVIR_CHECK_VERSION(11, 1, 0)
+#    define VIR_CONNECT_LIST_NODE_DEVICES_CAP_CCWGROUP_DEV (1 << 22)
+#  endif
+#  if !LIBVIR_CHECK_VERSION(11, 1, 0)
+#    define VIR_CONNECT_LIST_NODE_DEVICES_CAP_CCWGROUP_MEMBER (1 << 23)
+#  endif
 #  if !LIBVIR_CHECK_VERSION(10, 1, 0)
 #    define VIR_CONNECT_LIST_NODE_DEVICES_PERSISTENT (1 << 28)
 #  endif
@@ -985,8 +991,11 @@
 #  if !LIBVIR_CHECK_VERSION(7, 9, 0)
 #    define VIR_DOMAIN_EVENT_ID_MEMORY_DEVICE_SIZE_CHANGE 26
 #  endif
+#  if !LIBVIR_CHECK_VERSION(11, 2, 0)
+#    define VIR_DOMAIN_EVENT_ID_NIC_MAC_CHANGE 27
+#  endif
 #  if !LIBVIR_CHECK_VERSION(0, 8, 0)
-#    define VIR_DOMAIN_EVENT_ID_LAST 27
+#    define VIR_DOMAIN_EVENT_ID_LAST 28
 #  endif
 
 /* enum virDomainEventIOErrorAction */
@@ -1263,6 +1272,9 @@
 #  if !LIBVIR_CHECK_VERSION(7, 10, 0)
 #    define VIR_DOMAIN_GUEST_INFO_INTERFACES (1 << 6)
 #  endif
+#  if !LIBVIR_CHECK_VERSION(11, 2, 0)
+#    define VIR_DOMAIN_GUEST_INFO_LOAD (1 << 7)
+#  endif
 
 /* enum virDomainInterfaceAddressesSource */
 #  if !LIBVIR_CHECK_VERSION(1, 2, 14)
@@ -1487,6 +1499,9 @@
 #  endif
 #  if !LIBVIR_CHECK_VERSION(7, 1, 0)
 #    define VIR_DOMAIN_MESSAGE_TAINTING (1 << 1)
+#  endif
+#  if !LIBVIR_CHECK_VERSION(11, 1, 0)
+#    define VIR_DOMAIN_MESSAGE_IOERRORS (1 << 2)
 #  endif
 
 /* enum virDomainMetadataType */
@@ -2826,8 +2841,14 @@
 #  if !LIBVIR_CHECK_VERSION(9, 7, 0)
 #    define VIR_ERR_NO_NETWORK_METADATA 111
 #  endif
+#  if !LIBVIR_CHECK_VERSION(11, 2, 0)
+#    define VIR_ERR_AGENT_COMMAND_TIMEOUT 112
+#  endif
+#  if !LIBVIR_CHECK_VERSION(11, 2, 0)
+#    define VIR_ERR_AGENT_COMMAND_FAILED 113
+#  endif
 #  if !LIBVIR_CHECK_VERSION(5, 0, 0)
-#    define VIR_ERR_NUMBER_LAST 112
+#    define VIR_ERR_NUMBER_LAST 114
 #  endif
 
 /* enum virEventHandleType */
