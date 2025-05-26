@@ -655,7 +655,8 @@ func TestRegisterNewCredentials(t *testing.T) {
 
 	updates := ironic.GetLastNodeUpdateRequestFor("uuid")
 	assert.Equal(t, "/driver_info", updates[0].Path)
-	newValues := updates[0].Value.(map[string]interface{})
+	newValues, ok := updates[0].Value.(map[string]interface{})
+	require.True(t, ok, "expected to be a map")
 	assert.Equal(t, "test.bmc", newValues["test_address"])
 }
 
@@ -846,6 +847,28 @@ func TestRegisterUnsupportedSecureBoot(t *testing.T) {
 	assert.Contains(t, result.ErrorMessage, "does not support secure boot")
 }
 
+func TestRegisterUnsupportedDriverWithoutProvNet(t *testing.T) {
+	host := makeHost()
+	host.Status.Provisioning.ID = "" // so we don't lookup by uuid
+
+	ironic := testserver.NewIronic(t).NoNode("myns" + nameSeparator + host.Name).NoNode(host.Name)
+	ironic.Start()
+	defer ironic.Stop()
+
+	auth := clients.AuthConfig{Type: clients.NoAuth}
+	prov, err := newProvisionerWithSettings(host, bmc.Credentials{}, nil, ironic.Endpoint(), auth)
+	if err != nil {
+		t.Fatalf("could not create provisioner: %s", err)
+	}
+	prov.config.provNetDisabled = true
+
+	result, _, err := prov.Register(provisioner.ManagementAccessData{}, false, false)
+	if err != nil {
+		t.Fatalf("error from Register: %s", err)
+	}
+	assert.Contains(t, result.ErrorMessage, "requires a provisioning network")
+}
+
 func TestRegisterNoBMCDetails(t *testing.T) {
 	ironic := testserver.NewIronic(t)
 	ironic.Start()
@@ -940,7 +963,8 @@ func TestRegisterUpdateBMCAddressIP(t *testing.T) {
 
 	updates := ironic.GetLastNodeUpdateRequestFor("uuid")
 	assert.Equal(t, "/driver_info", updates[0].Path)
-	newValues := updates[0].Value.(map[string]interface{})
+	newValues, ok := updates[0].Value.(map[string]interface{})
+	require.True(t, ok, "expected to be a map")
 	assert.Equal(t, "192.168.122.10", newValues["ipmi_address"])
 }
 
@@ -1001,7 +1025,8 @@ func TestRegisterUpdateBMCAddressProtocol(t *testing.T) {
 
 	updates := ironic.GetLastNodeUpdateRequestFor("uuid")
 	assert.Equal(t, "/driver_info", updates[0].Path)
-	newValues := updates[0].Value.(map[string]interface{})
+	newValues, ok := updates[0].Value.(map[string]interface{})
+	require.True(t, ok, "expected to be a map")
 	assert.Equal(t, "https://192.168.122.1:623", newValues["redfish_address"])
 }
 
