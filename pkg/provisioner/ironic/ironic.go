@@ -69,6 +69,7 @@ type ironicConfig struct {
 	liveISOForcePersistentBootDevice string
 	maxBusyHosts                     int
 	externalURL                      string
+	provNetDisabled                  bool
 }
 
 // Provisioner implements the provisioning.Provisioner interface
@@ -105,8 +106,9 @@ type ironicProvisioner struct {
 // FIXME(hroyrh) : move this to gophercloud when implementing
 // VirtualMediaGetResult Extract function.
 type VirtualMedia struct {
-	Image      string   `json:"image"`
-	Inserted   bool     `json:"inserted"`
+	Image    string `json:"image"`
+	Inserted bool   `json:"inserted"`
+	//nolint:tagliatelle
 	MediaTypes []string `json:"media_types"`
 }
 
