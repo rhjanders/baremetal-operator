@@ -3,11 +3,11 @@ images:
 - name: quay.io/metal3-io/baremetal-operator:e2e
   loadBehavior: tryLoad
 # Save some time and network by using cached images if available
-- name: quay.io/metal3-io/baremetal-operator:release-0.6
-  loadBehavior: tryLoad
 - name: quay.io/metal3-io/baremetal-operator:release-0.8
   loadBehavior: tryLoad
 - name: quay.io/metal3-io/baremetal-operator:release-0.9
+  loadBehavior: tryLoad
+- name: quay.io/metal3-io/baremetal-operator:release-0.10
   loadBehavior: tryLoad
 - name: quay.io/jetstack/cert-manager-cainjector:v1.17.1
   loadBehavior: tryLoad
@@ -53,16 +53,12 @@ intervals:
   default/wait-available: ["5m", "1s"]
   default/wait-deleting: ["5s", "10ms"]
   default/wait-deleted: ["5s", "10ms"]
+  default/wait-detached: ["1s", "10ms"]
   default/wait-secret-deletion: ["5s", "10ms"]
   default/wait-power-state: ["5s", "10ms"]
   default/wait-externally-provisioned: ["1m", "10ms"]
 
 bmoIronicUpgradeSpecs:
-- deployIronic: false
-  deployBMO: true
-  initBMOKustomization: "../../config/overlays/fixture-release-0.6"
-  upgradeEntityKustomization: "../../config/overlays/fixture"
-  upgradeEntityName: "bmo"
 - deployIronic: false
   deployBMO: true
   initBMOKustomization: "../../config/overlays/fixture-release-0.8"
@@ -71,5 +67,10 @@ bmoIronicUpgradeSpecs:
 - deployIronic: false
   deployBMO: true
   initBMOKustomization: "../../config/overlays/fixture-release-0.9"
+  upgradeEntityKustomization: "../../config/overlays/fixture"
+  upgradeEntityName: "bmo"
+- deployIronic: false
+  deployBMO: true
+  initBMOKustomization: "../../config/overlays/fixture-release-0.10"
   upgradeEntityKustomization: "../../config/overlays/fixture"
   upgradeEntityName: "bmo"

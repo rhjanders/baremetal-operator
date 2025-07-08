@@ -7,7 +7,6 @@ import (
 	"github.com/go-logr/logr"
 	metal3api "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	"github.com/metal3-io/baremetal-operator/pkg/provisioner"
-	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -88,7 +87,7 @@ func recordStateEnd(info *reconcileInfo, host *metal3api.BareMetalHost, state me
 func (hsm *hostStateMachine) ensureCapacity(info *reconcileInfo, state metal3api.ProvisioningState) actionResult {
 	hasCapacity, err := hsm.Provisioner.HasCapacity()
 	if err != nil {
-		return actionError{errors.Wrap(err, "failed to determine current provisioner capacity")}
+		return actionError{fmt.Errorf("failed to determine current provisioner capacity: %w", err)}
 	}
 
 	if !hasCapacity {
@@ -111,6 +110,7 @@ func (hsm *hostStateMachine) updateHostStateFrom(initialState metal3api.Provisio
 			if actionRes := hsm.ensureCapacity(info, hsm.NextState); actionRes != nil {
 				return actionRes
 			}
+		default:
 		}
 
 		info.log.Info("changing provisioning state",
@@ -141,6 +141,7 @@ func (hsm *hostStateMachine) updateHostStateFrom(initialState metal3api.Provisio
 				info.log.Info("saving boot mode",
 					"new mode", hsm.Host.Status.Provisioning.BootMode)
 			}
+		default:
 		}
 	}
 
@@ -167,6 +168,7 @@ func (hsm *hostStateMachine) checkDelayedHost(info *reconcileInfo) actionResult 
 		if actionRes := hsm.ensureCapacity(info, info.host.Status.Provisioning.State); actionRes != nil {
 			return actionRes
 		}
+	default:
 	}
 
 	return nil
@@ -241,6 +243,18 @@ func (hsm *hostStateMachine) checkInitiateDelete(log logr.Logger) bool {
 		} else {
 			hsm.NextState = metal3api.StateDeprovisioning
 		}
+	case metal3api.StateExternallyProvisioned:
+		if hsm.Host.OperationalStatus() == metal3api.OperationalStatusDetached {
+			if delayDeleteForDetachedHost(hsm.Host) {
+				log.Info("Delaying detached host deletion")
+				deleteDelayedForDetached.Inc()
+				return false
+			}
+			// We cannot power off a detached host.  Skip to delete.
+			hsm.NextState = metal3api.StateDeleting
+		} else {
+			hsm.NextState = metal3api.StatePoweringOffBeforeDelete
+		}
 	case metal3api.StateDeprovisioning:
 		if hsm.Host.Status.ErrorType == metal3api.RegistrationError && hsm.Host.Status.ErrorCount > 3 {
 			hsm.NextState = metal3api.StateDeleting
@@ -303,6 +317,7 @@ func (hsm *hostStateMachine) checkDetachedHost(info *reconcileInfo) (result acti
 		switch info.host.Status.Provisioning.State {
 		case metal3api.StateProvisioned, metal3api.StateExternallyProvisioned, metal3api.StateReady, metal3api.StateAvailable:
 			return hsm.Reconciler.detachHost(hsm.Provisioner, info)
+		default:
 		}
 	}
 	if info.host.Status.ErrorType == metal3api.DetachError {

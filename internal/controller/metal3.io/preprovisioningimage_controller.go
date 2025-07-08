@@ -18,6 +18,8 @@ package controllers
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -25,7 +27,6 @@ import (
 	"github.com/metal3-io/baremetal-operator/pkg/imageprovider"
 	"github.com/metal3-io/baremetal-operator/pkg/secretutils"
 	"github.com/metal3-io/baremetal-operator/pkg/utils"
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -82,14 +83,14 @@ func (r *PreprovisioningImageReconciler) Reconcile(ctx context.Context, req ctrl
 
 	if !img.DeletionTimestamp.IsZero() {
 		log.Info("cleaning up deleted resource")
-		if err := r.discardExistingImage(&img, log); err != nil {
+		if err = r.discardExistingImage(&img, log); err != nil {
 			return ctrl.Result{}, err
 		}
 		img.Finalizers = utils.FilterStringFromList(
 			img.Finalizers, metal3api.PreprovisioningImageFinalizer)
-		err := r.Update(ctx, &img)
+		err = r.Update(ctx, &img)
 		if err != nil {
-			return ctrl.Result{}, errors.Wrap(err, "failed to remove finalizer")
+			return ctrl.Result{}, fmt.Errorf("failed to remove finalizer: %w", err)
 		}
 		return ctrl.Result{}, nil
 	}
@@ -97,9 +98,9 @@ func (r *PreprovisioningImageReconciler) Reconcile(ctx context.Context, req ctrl
 	if !utils.StringInList(img.Finalizers, metal3api.PreprovisioningImageFinalizer) {
 		log.Info("adding finalizer")
 		img.Finalizers = append(img.Finalizers, metal3api.PreprovisioningImageFinalizer)
-		err := r.Update(ctx, &img)
+		err = r.Update(ctx, &img)
 		if err != nil {
-			return ctrl.Result{}, errors.Wrap(err, "failed to add finalizer")
+			return ctrl.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
 		}
 		return ctrl.Result{}, nil
 	}
@@ -173,7 +174,7 @@ func (r *PreprovisioningImageReconciler) update(ctx context.Context, img *metal3
 			// from the image cache.
 			setUnready(generation, &img.Status, reason)
 		} else {
-			if err := r.discardExistingImage(img, log); err != nil {
+			if err = r.discardExistingImage(img, log); err != nil {
 				return false, err
 			}
 			// Set up all the data before building the image and adding the URL,

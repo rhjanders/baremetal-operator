@@ -8,7 +8,6 @@ import (
 	"github.com/metal3-io/baremetal-operator/pkg/hardwareutils/bmc"
 	"github.com/metal3-io/baremetal-operator/pkg/provisioner"
 	"github.com/metal3-io/baremetal-operator/pkg/provisioner/ironic/clients"
-
 	// We don't use this package directly here, but need it imported
 	// so it registers its test fixture with the other BMC access
 	// types.
@@ -134,7 +133,7 @@ func TestNewNoBMCDetails(t *testing.T) {
 	host.Spec.BMC = metal3api.BMCDetails{}
 
 	factory := newTestProvisionerFactory()
-	prov, err := factory.NewProvisioner(context.TODO(), provisioner.BuildHostData(host, bmc.Credentials{}), nullEventPublisher)
+	prov, err := factory.NewProvisioner(t.Context(), provisioner.BuildHostData(host, bmc.Credentials{}), nullEventPublisher)
 	require.NoError(t, err)
 	assert.NotNil(t, prov)
 }

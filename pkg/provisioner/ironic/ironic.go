@@ -138,8 +138,7 @@ func (p *ironicProvisioner) validateNode(ironicNode *nodes.Node) (errorMessage s
 		// We expect to see errors of this nature sometimes, so rather
 		// than reporting it as a reconcile error we record the error
 		// status on the host and return.
-		errorMessage = fmt.Sprintf("host validation error: %s",
-			strings.Join(validationErrors, "; "))
+		errorMessage = "host validation error: " + strings.Join(validationErrors, "; ")
 		return errorMessage, nil
 	}
 	return "", nil
@@ -232,6 +231,7 @@ func (p *ironicProvisioner) isAddressAllocatedToPort(address string) (bool, erro
 }
 
 // Look for an existing registration for the host in Ironic.
+// Returns nil, nil if no host exists with MAC.
 func (p *ironicProvisioner) findExistingHost(bootMACAddress string) (ironicNode *nodes.Node, err error) {
 	// Try to load the node by UUID
 	ironicNode, err = p.getNode()
@@ -266,7 +266,7 @@ func (p *ironicProvisioner) findExistingHost(bootMACAddress string) (ironicNode 
 
 	if err != nil {
 		p.log.Info("failed to find an existing port with address", "MAC", bootMACAddress)
-		return nil, nil //nolint:nilerr
+		return nil, nil //nolint:nilerr,nilnil
 	}
 
 	if len(allPorts) > 0 {
@@ -291,7 +291,7 @@ func (p *ironicProvisioner) findExistingHost(bootMACAddress string) (ironicNode 
 	p.log.Info("port with address doesn't exist", "MAC", bootMACAddress)
 	// Either the node was never created or the Ironic database has
 	// been dropped.
-	return nil, nil
+	return nil, nil //nolint:nilnil
 }
 
 func (p *ironicProvisioner) createPXEEnabledNodePort(uuid, macAddress string) error {
@@ -345,21 +345,17 @@ func (p *ironicProvisioner) configureImages(data provisioner.ManagementAccessDat
 		return result, err
 	}
 
+	if data.State == metal3api.StateProvisioning && data.CurrentImage.IsLiveISO() {
+		// Live ISO doesn't need pre-provisioning image
+		return result, nil
+	}
+
+	if data.State == metal3api.StateDeprovisioning && data.AutomatedCleaningMode == metal3api.CleaningModeDisabled {
+		// No need for pre-provisioning image if cleaning disabled
+		return result, nil
+	}
+
 	switch data.State {
-	case metal3api.StateProvisioning,
-		metal3api.StateDeprovisioning:
-		if data.State == metal3api.StateProvisioning {
-			if data.CurrentImage.IsLiveISO() {
-				// Live ISO doesn't need pre-provisioning image
-				return result, nil
-			}
-		} else {
-			if data.AutomatedCleaningMode == metal3api.CleaningModeDisabled {
-				// No need for pre-provisioning image if cleaning disabled
-				return result, nil
-			}
-		}
-		fallthrough
 	case metal3api.StateInspecting,
 		metal3api.StatePreparing:
 		if deployImageInfo == nil {
@@ -370,6 +366,7 @@ func (p *ironicProvisioner) configureImages(data provisioner.ManagementAccessDat
 			}
 			return result, err
 		}
+	default:
 	}
 
 	return result, nil
@@ -467,7 +464,7 @@ func setDeployImage(config ironicConfig, accessDetails bmc.AccessDetails, hostIm
 			deployImageInfo[deployRamdiskKey] = hostImage.ImageURL
 			if hostImage.ExtraKernelParams != "" {
 				// Using %default% prevents overriding the config in ironic-image
-				deployImageInfo[kernelParamsKey] = fmt.Sprintf("%%default%% %s", hostImage.ExtraKernelParams)
+				deployImageInfo[kernelParamsKey] = "%default% " + hostImage.ExtraKernelParams
 			}
 			return deployImageInfo
 		}
@@ -764,7 +761,7 @@ func (p *ironicProvisioner) GetFirmwareComponents() ([]metal3api.FirmwareCompone
 	}
 
 	if !p.availableFeatures.HasFirmwareUpdates() {
-		return nil, fmt.Errorf("current ironic version does not support firmware updates")
+		return nil, errors.New("current ironic version does not support firmware updates")
 	}
 
 	// Setting to 2 since we only support bmc and bios
@@ -834,7 +831,7 @@ func (p *ironicProvisioner) setUpForProvisioning(ironicNode *nodes.Node, data pr
 		"deploy step", ironicNode.DeployStep,
 	)
 	p.publisher("ProvisioningStarted",
-		fmt.Sprintf("Image provisioning started for %s", data.Image.URL))
+		"Image provisioning started for "+data.Image.URL)
 	return result, nil
 }
 
@@ -887,8 +884,8 @@ func (p *ironicProvisioner) Adopt(data provisioner.AdoptData, restartOnFailure b
 				},
 			)
 		}
-		return operationFailed(fmt.Sprintf("Host adoption failed: %s",
-			ironicNode.LastError))
+		return operationFailed("Host adoption failed: " +
+			ironicNode.LastError)
 	case nodes.Active:
 		// Empty Fault means that maintenance was set manually, not by Ironic
 		if ironicNode.Maintenance && ironicNode.Fault == "" && data.State != metal3api.StateDeleting {
@@ -1251,6 +1248,8 @@ func (p *ironicProvisioner) Provision(data provisioner.ProvisionData, forceReboo
 		// with the image and checksum we have been trying to use, so we
 		// should stop. (If the image values do not match, we want to try
 		// again.)
+		var provResult provisioner.Result
+		var configDrive nodes.ConfigDrive
 		if ironicHasSameImage {
 			// Save me from "eventually consistent" systems built on
 			// top of relational databases...
@@ -1259,15 +1258,14 @@ func (p *ironicProvisioner) Provision(data provisioner.ProvisionData, forceReboo
 				return retryAfterDelay(0)
 			}
 			p.log.Info("found error", "msg", ironicNode.LastError)
-			return operationFailed(fmt.Sprintf("Image provisioning failed: %s",
-				ironicNode.LastError))
+			return operationFailed("Image provisioning failed: " + ironicNode.LastError)
 		}
 		p.log.Info("recovering from previous failure")
-		if provResult, err := p.setUpForProvisioning(ironicNode, data); err != nil || provResult.Dirty || provResult.ErrorMessage != "" {
+		if provResult, err = p.setUpForProvisioning(ironicNode, data); err != nil || provResult.Dirty || provResult.ErrorMessage != "" {
 			return provResult, err
 		}
 
-		configDrive, err := p.getConfigDrive(data)
+		configDrive, err = p.getConfigDrive(data)
 		if err != nil {
 			return transientError(err)
 		}
@@ -1296,14 +1294,17 @@ func (p *ironicProvisioner) Provision(data provisioner.ProvisionData, forceReboo
 		)
 
 	case nodes.Available:
-		if provResult, err := p.setUpForProvisioning(ironicNode, data); err != nil || provResult.Dirty || provResult.ErrorMessage != "" {
+		var provResult provisioner.Result
+		var configDrive nodes.ConfigDrive
+
+		if provResult, err = p.setUpForProvisioning(ironicNode, data); err != nil || provResult.Dirty || provResult.ErrorMessage != "" {
 			return provResult, err
 		}
 
 		// After it is available, we need to start provisioning by
 		// setting the state to "active".
 
-		configDrive, err := p.getConfigDrive(data)
+		configDrive, err = p.getConfigDrive(data)
 		if err != nil {
 			return transientError(err)
 		}
@@ -1320,7 +1321,7 @@ func (p *ironicProvisioner) Provision(data provisioner.ProvisionData, forceReboo
 	case nodes.Active:
 		// provisioning is done
 		p.publisher("ProvisioningComplete",
-			fmt.Sprintf("Image provisioning completed for %s", data.Image.URL))
+			"Image provisioning completed for "+data.Image.URL)
 		p.log.Info("finished provisioning")
 		return operationComplete()
 
@@ -1406,7 +1407,7 @@ func (p *ironicProvisioner) Deprovision(restartOnFailure bool) (result provision
 	case nodes.CleanFail:
 		if !restartOnFailure {
 			p.log.Info("cleaning failed", "lastError", ironicNode.LastError)
-			return operationFailed(fmt.Sprintf("Cleaning failed: %s", ironicNode.LastError))
+			return operationFailed("Cleaning failed: " + ironicNode.LastError)
 		}
 		p.log.Info("retrying cleaning")
 		if ironicNode.Maintenance {
@@ -1493,10 +1494,11 @@ func (p *ironicProvisioner) Delete() (result provisioner.Result, err error) {
 	if currentProvState == nodes.Available || currentProvState == nodes.Manageable {
 		// Make sure we don't have a stale instance UUID
 		if ironicNode.InstanceUUID != "" {
+			var success bool
 			p.log.Info("removing stale instance UUID before deletion", "instanceUUID", ironicNode.InstanceUUID)
 			updater := clients.UpdateOptsBuilder(p.log)
 			updater.SetTopLevelOpt("instance_uuid", nil, ironicNode.InstanceUUID)
-			_, success, result, err := p.tryUpdateNode(ironicNode, updater)
+			_, success, result, err = p.tryUpdateNode(ironicNode, updater)
 			if !success {
 				return result, err
 			}
@@ -1624,8 +1626,8 @@ func (p *ironicProvisioner) PowerOn(force bool) (result provisioner.Result, err 
 		}
 		if ironicNode.LastError != "" && !force {
 			p.log.Info("PowerOn operation failed", "msg", ironicNode.LastError)
-			return operationFailed(fmt.Sprintf("PowerOn operation failed: %s",
-				ironicNode.LastError))
+			return operationFailed("PowerOn operation failed: " +
+				ironicNode.LastError)
 		}
 		return p.changePower(ironicNode, nodes.PowerOn)
 	}
@@ -1734,6 +1736,7 @@ func (p *ironicProvisioner) loadBusyHosts() (hosts map[string]struct{}, err erro
 			if !strings.Contains(node.BootInterface, "virtual-media") {
 				hosts[node.Name] = struct{}{}
 			}
+		default:
 		}
 	}
 

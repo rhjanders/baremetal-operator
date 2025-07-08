@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"path"
-	"time"
 
 	metal3api "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
@@ -19,7 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/cluster-api/test/framework"
 	"sigs.k8s.io/cluster-api/util"
-	"sigs.k8s.io/cluster-api/util/patch"
+	"sigs.k8s.io/cluster-api/util/deprecated/v1beta1/patch"
 )
 
 var _ = Describe("Provision, detach, recreate from status and deprovision", Label("required", "provision", "detach", "status", "deprovision"),
@@ -140,16 +139,30 @@ var _ = Describe("Provision, detach, recreate from status and deprovision", Labe
 
 			Expect(helper.Patch(ctx, &bmh)).To(Succeed())
 
+			By("Waiting for the BMH to be detached")
+			WaitForBmhInOperationalStatus(ctx, WaitForBmhInOperationalStatusInput{
+				Client: clusterProxy.GetClient(),
+				Bmh:    bmh,
+				State:  metal3api.OperationalStatusDetached,
+				UndesiredStates: []metal3api.OperationalStatus{
+					metal3api.OperationalStatusError,
+				},
+			}, e2eConfig.GetIntervals(specName, "wait-detached")...)
+
+			// Save the status with the current operationalStatus
+			By("Retrieving the latest BMH object")
+			err = clusterProxy.GetClient().Get(ctx, types.NamespacedName{
+				Name:      bmh.Name,
+				Namespace: bmh.Namespace,
+			}, &bmh)
+			Expect(err).NotTo(HaveOccurred())
+
 			By("Saving the status to a JSON string")
 			savedStatus := bmh.Status
 			statusJSON, err := json.Marshal(savedStatus)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Deleting the BMH")
-			// Wait for 2 seconds to allow time to confirm annotation is set
-			// TODO: fix this so we do not need the sleep
-			time.Sleep(2 * time.Second)
-
 			err = clusterProxy.GetClient().Delete(ctx, &bmh)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -167,7 +180,7 @@ var _ = Describe("Provision, detach, recreate from status and deprovision", Labe
 
 			By("Waiting for the secret to be deleted")
 			Eventually(func() bool {
-				err := clusterProxy.GetClient().Get(ctx, types.NamespacedName{
+				err = clusterProxy.GetClient().Get(ctx, types.NamespacedName{
 					Name:      "bmc-credentials",
 					Namespace: namespace.Name,
 				}, &corev1.Secret{})

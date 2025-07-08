@@ -19,6 +19,8 @@ package controllers
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/hex"
+	"errors"
 	"fmt"
 	"reflect"
 	"sort"
@@ -29,7 +31,6 @@ import (
 	"github.com/go-logr/logr"
 	metal3api "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	"github.com/metal3-io/baremetal-operator/pkg/provisioner"
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -139,13 +140,13 @@ func (r *HostFirmwareSettingsReconciler) Reconcile(ctx context.Context, req ctrl
 			return ctrl.Result{Requeue: true, RequeueAfter: resourceNotAvailableRetryDelay}, nil
 		}
 		// Error reading the object - requeue the request.
-		return ctrl.Result{}, errors.Wrap(err, "could not load hostFirmwareSettings")
+		return ctrl.Result{}, fmt.Errorf("could not load hostFirmwareSettings: %w", err)
 	}
 
 	// Create a provisioner that can access Ironic API
 	prov, err := r.ProvisionerFactory.NewProvisioner(ctx, provisioner.BuildHostDataNoBMC(*bmh), info.publishEvent)
 	if err != nil {
-		return ctrl.Result{}, errors.Wrap(err, "failed to create provisioner")
+		return ctrl.Result{}, fmt.Errorf("failed to create provisioner: %w", err)
 	}
 
 	ready, err := prov.TryInit()
@@ -170,7 +171,7 @@ func (r *HostFirmwareSettingsReconciler) Reconcile(ctx context.Context, req ctrl
 	}
 
 	if err = r.updateHostFirmwareSettings(currentSettings, schema, info); err != nil {
-		return ctrl.Result{}, errors.Wrap(err, "Could not update hostFirmwareSettings")
+		return ctrl.Result{}, fmt.Errorf("could not update hostFirmwareSettings: %w", err)
 	}
 
 	for _, e := range info.events {
@@ -190,11 +191,11 @@ func (r *HostFirmwareSettingsReconciler) updateHostFirmwareSettings(currentSetti
 	// get or create a firmwareSchema to hold schema
 	firmwareSchema, err := r.getOrCreateFirmwareSchema(info, schema)
 	if err != nil {
-		return errors.Wrap(err, "could not get/create firmware schema")
+		return fmt.Errorf("could not get/create firmware schema: %w", err)
 	}
 
 	if err = r.updateStatus(info, currentSettings, firmwareSchema); err != nil {
-		return errors.Wrap(err, "could not update hostFirmwareSettings")
+		return fmt.Errorf("could not update hostFirmwareSettings: %w", err)
 	}
 
 	return nil
@@ -303,7 +304,7 @@ func (r *HostFirmwareSettingsReconciler) getOrCreateFirmwareSchema(info *rInfo, 
 
 		// Add hfs as owner so can be garbage collected on delete, if already an owner it will just be overwritten
 		if err = controllerutil.SetOwnerReference(info.hfs, firmwareSchema, r.Scheme()); err != nil {
-			return nil, errors.Wrap(err, "could not set owner of existing firmwareSchema")
+			return nil, fmt.Errorf("could not set owner of existing firmwareSchema: %w", err)
 		}
 		if err = r.Update(info.ctx, firmwareSchema); err != nil {
 			return nil, err
@@ -344,7 +345,7 @@ func (r *HostFirmwareSettingsReconciler) getOrCreateFirmwareSchema(info *rInfo, 
 	}
 	// Set hfs as owner
 	if err = controllerutil.SetOwnerReference(info.hfs, firmwareSchema, r.Scheme()); err != nil {
-		return nil, errors.Wrap(err, "could not set owner of firmwareSchema")
+		return nil, fmt.Errorf("could not set owner of firmwareSchema: %w", err)
 	}
 
 	if err = r.Create(info.ctx, firmwareSchema); err != nil {
@@ -382,31 +383,31 @@ func (r *HostFirmwareSettingsReconciler) updateEventHandler(e event.UpdateEvent)
 
 // Validate the HostFirmwareSetting Spec against the schema.
 func (r *HostFirmwareSettingsReconciler) validateHostFirmwareSettings(info *rInfo, status *metal3api.HostFirmwareSettingsStatus, schema *metal3api.FirmwareSchema) []error {
-	var errors []error
+	var errs []error
 
 	for name, val := range info.hfs.Spec.Settings {
 		// Prohibit any Spec settings with "Password"
 		if strings.Contains(name, "Password") {
-			errors = append(errors, fmt.Errorf("cannot set Password field"))
+			errs = append(errs, errors.New("cannot set Password field"))
 			continue
 		}
 
 		// The setting must be in the Status
 		if _, ok := status.Settings[name]; !ok {
-			errors = append(errors, fmt.Errorf("setting %s is not in the Status field", name))
+			errs = append(errs, fmt.Errorf("setting %s is not in the Status field", name))
 			continue
 		}
 
 		// check validity of updated value
 		if schema != nil {
 			if err := schema.ValidateSetting(name, val, schema.Spec.Schema); err != nil {
-				errors = append(errors, err)
+				errs = append(errs, err)
 			}
 		}
 	}
 
-	if len(errors) > 0 {
-		return errors
+	if len(errs) > 0 {
+		return errs
 	}
 
 	return nil
@@ -469,7 +470,7 @@ func GetSchemaName(schema map[string]metal3api.SettingSchema) string {
 
 	h := sha256.New()
 	fmt.Fprintf(h, "%v", hashkeys)
-	hash := fmt.Sprintf("%x", h.Sum(nil))[:8]
+	hash := hex.EncodeToString(h.Sum(nil))[:8]
 
 	return "schema-" + hash
 }

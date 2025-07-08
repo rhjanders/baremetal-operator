@@ -377,7 +377,7 @@ func TestStoreHostFirmwareComponents(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.Scenario, func(t *testing.T) {
-			ctx := context.TODO()
+			ctx := t.Context()
 
 			tc.ExpectedComponents.TypeMeta = metav1.TypeMeta{
 				Kind:       "HostFirmwareComponents",
@@ -501,7 +501,7 @@ func TestValidadeHostFirmwareComponents(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.Scenario, func(t *testing.T) {
-			ctx := context.TODO()
+			ctx := t.Context()
 			hfc := getHFC(tc.SpecUpdates)
 			r := getTestHFCReconciler(hfc)
 			info := rhfcInfo{
@@ -511,7 +511,7 @@ func TestValidadeHostFirmwareComponents(t *testing.T) {
 			}
 			errors := r.validateHostFirmwareComponents(&info)
 			if len(errors) == 0 {
-				assert.Equal(t, "", tc.ExpectedErrors[0])
+				assert.Empty(t, tc.ExpectedErrors[0])
 			} else {
 				for i := range errors {
 					assert.Equal(t, tc.ExpectedErrors[i], errors[i].Error())

@@ -4,6 +4,7 @@
 package e2e
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"runtime"
@@ -11,7 +12,6 @@ import (
 	"time"
 
 	. "github.com/onsi/gomega"
-	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
 	"sigs.k8s.io/kind/pkg/apis/config/v1alpha4"
@@ -28,6 +28,9 @@ const (
 	// TryLoadImage causes any errors that occur when loading an image to be
 	// ignored.
 	TryLoadImage LoadImageBehavior = "tryLoad"
+
+	bmoString    string = "bmo"
+	ironicString string = "ironic"
 )
 
 type BMOIronicUpgradeInput struct {
@@ -100,17 +103,21 @@ func (c *Config) Defaults() {
 // Validate validates the configuration. More specifically:
 // - Image should have name and loadBehavior be one of [mustload, tryload].
 // - Intervals should be valid ginkgo intervals.
+// - BMOIronicUpgradeSpecs should have valid InitIronicKustomization field if DeployIronic is true.
+// - BMOIronicUpgradeSpecs should have valid InitBMOKustomization field if DeployBMO is true.
+// - BMOIronicUpgradeSpecs' UpgradeEntityName should be either 'bmo' or 'ironic'.
+// - BMOIronicUpgradeSpecs should have valid UpgradeEntityKustomization.
 func (c *Config) Validate() error {
 	// Image should have name and loadBehavior be one of [mustload, tryload].
 	for i, containerImage := range c.Images {
 		if containerImage.Name == "" {
-			return errors.Errorf("Container image is missing name: Images[%d].Name=%q", i, containerImage.Name)
+			return fmt.Errorf("container image is missing name: Images[%d].Name=%q", i, containerImage.Name)
 		}
 		switch containerImage.LoadBehavior {
 		case clusterctl.MustLoadImage, clusterctl.TryLoadImage:
 			// Valid
 		default:
-			return errors.Errorf("Invalid load behavior: Images[%d].LoadBehavior=%q", i, containerImage.LoadBehavior)
+			return fmt.Errorf("invalid load behavior: Images[%d].LoadBehavior=%q", i, containerImage.LoadBehavior)
 		}
 	}
 
@@ -118,17 +125,49 @@ func (c *Config) Validate() error {
 	for k, intervals := range c.Intervals {
 		switch len(intervals) {
 		case 0:
-			return errors.Errorf("Invalid interval: Intervals[%s]=%q", k, intervals)
+			return fmt.Errorf("invalid interval: Intervals[%s]=%q", k, intervals)
 		case 1, 2: //nolint: mnd
 		default:
-			return errors.Errorf("Invalid interval: Intervals[%s]=%q", k, intervals)
+			return fmt.Errorf("invalid interval: Intervals[%s]=%q", k, intervals)
 		}
 		for _, i := range intervals {
 			if _, err := time.ParseDuration(i); err != nil {
-				return errors.Errorf("Invalid interval: Intervals[%s]=%q", k, intervals)
+				return fmt.Errorf("invalid interval: Intervals[%s]=%q", k, intervals)
 			}
 		}
 	}
+
+	for _, spec := range c.BMOIronicUpgradeSpecs {
+		if spec.DeployIronic {
+			if spec.InitIronicKustomization == "" {
+				return errors.New("ironic kustomization should be provided")
+			}
+			if _, err := os.Stat(spec.InitIronicKustomization); err != nil {
+				return fmt.Errorf("ironic kustomization file not found: %s. Error %w", spec.InitIronicKustomization, err)
+			}
+		}
+
+		if spec.DeployBMO {
+			if spec.InitBMOKustomization == "" {
+				return errors.New("BMO kustomization should be provided")
+			}
+			if _, err := os.Stat(spec.InitBMOKustomization); err != nil {
+				return fmt.Errorf("BMO kustomization file not found: %s. Error %w", spec.InitBMOKustomization, err)
+			}
+		}
+
+		if spec.UpgradeEntityName != bmoString && spec.UpgradeEntityName != "ironic" {
+			return errors.New("UpgradeEntityName should be either 'bmo' or 'ironic'")
+		}
+
+		if spec.UpgradeEntityKustomization == "" {
+			return errors.New("UpgradeEntityKustomization should be provided")
+		}
+		if _, err := os.Stat(spec.UpgradeEntityKustomization); err != nil {
+			return fmt.Errorf("UpgradeEntityKustomization file not found: %s. Error %w", spec.UpgradeEntityKustomization, err)
+		}
+	}
+
 	return nil
 }
 
@@ -139,7 +178,7 @@ func (c *Config) Validate() error {
 func (c *Config) GetIntervals(spec, key string) []interface{} {
 	intervals, ok := c.Intervals[fmt.Sprintf("%s/%s", spec, key)]
 	if !ok {
-		if intervals, ok = c.Intervals[fmt.Sprintf("default/%s", key)]; !ok {
+		if intervals, ok = c.Intervals["default/"+key]; !ok {
 			return nil
 		}
 	}
