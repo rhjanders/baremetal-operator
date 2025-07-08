@@ -57,7 +57,6 @@ const (
 	NutanixProviderName        = "nutanix"
 	OCIProviderName            = "oci"
 	OpenStackProviderName      = "openstack"
-	PacketProviderName         = "packet"
 	TinkerbellProviderName     = "tinkerbell-tinkerbell"
 	SideroProviderName         = "sidero"
 	VCloudDirectorProviderName = "vcd"
@@ -200,11 +199,6 @@ func (p *providersClient) defaults() []Provider {
 			providerType: clusterctlv1.InfrastructureProviderType,
 		},
 		&provider{
-			name:         PacketProviderName,
-			url:          "https://github.com/kubernetes-sigs/cluster-api-provider-packet/releases/latest/infrastructure-components.yaml",
-			providerType: clusterctlv1.InfrastructureProviderType,
-		},
-		&provider{
 			name:         TinkerbellProviderName,
 			url:          "https://github.com/tinkerbell/cluster-api-provider-tinkerbell/releases/latest/infrastructure-components.yaml",
 			providerType: clusterctlv1.InfrastructureProviderType,
@@ -321,7 +315,7 @@ func (p *providersClient) defaults() []Provider {
 		},
 		&provider{
 			name:         K0smotronProviderName,
-			url:          "https://github.com/k0smotron/k0smotron/releases/latest/infrastructure-components.yaml",
+			url:          "https://github.com/k0sproject/k0smotron/releases/latest/infrastructure-components.yaml",
 			providerType: clusterctlv1.InfrastructureProviderType,
 		},
 		&provider{
@@ -368,7 +362,7 @@ func (p *providersClient) defaults() []Provider {
 		},
 		&provider{
 			name:         K0smotronBootstrapProviderName,
-			url:          "https://github.com/k0smotron/k0smotron/releases/latest/bootstrap-components.yaml",
+			url:          "https://github.com/k0sproject/k0smotron/releases/latest/bootstrap-components.yaml",
 			providerType: clusterctlv1.BootstrapProviderType,
 		},
 		&provider{
@@ -415,7 +409,7 @@ func (p *providersClient) defaults() []Provider {
 		},
 		&provider{
 			name:         K0smotronControlPlaneProviderName,
-			url:          "https://github.com/k0smotron/k0smotron/releases/latest/control-plane-components.yaml",
+			url:          "https://github.com/k0sproject/k0smotron/releases/latest/control-plane-components.yaml",
 			providerType: clusterctlv1.ControlPlaneProviderType,
 		},
 		&provider{
@@ -530,6 +524,10 @@ func (p *providersClient) Get(name string, providerType clusterctlv1.ProviderTyp
 func validateProvider(r Provider) error {
 	if r.Name() == "" {
 		return errors.New("name value cannot be empty")
+	}
+
+	if r.Name() != strings.ToLower(r.Name()) {
+		return errors.Errorf("provider name %s must be in lower case", r.Name())
 	}
 
 	if (r.Name() == ClusterAPIProviderName) != (r.Type() == clusterctlv1.CoreProviderType) {

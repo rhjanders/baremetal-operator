@@ -46,7 +46,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/util/annotations"
 	"sigs.k8s.io/cluster-api/util/contract"
 	"sigs.k8s.io/cluster-api/util/labels/format"
@@ -133,7 +133,7 @@ func GetMachineIfExists(ctx context.Context, c client.Client, namespace, name st
 
 // IsControlPlaneMachine checks machine is a control plane node.
 func IsControlPlaneMachine(machine *clusterv1.Machine) bool {
-	_, ok := machine.ObjectMeta.Labels[clusterv1.MachineControlPlaneLabel]
+	_, ok := machine.Labels[clusterv1.MachineControlPlaneLabel]
 	return ok
 }
 
@@ -464,7 +464,7 @@ func GetGVKMetadata(ctx context.Context, c client.Client, gvk schema.GroupVersio
 	meta.SetName(contract.CalculateCRDName(gvk.Group, gvk.Kind))
 	meta.SetGroupVersionKind(apiextensionsv1.SchemeGroupVersion.WithKind("CustomResourceDefinition"))
 	if err := c.Get(ctx, client.ObjectKeyFromObject(meta), meta); err != nil {
-		return meta, errors.Wrap(err, "failed to retrieve metadata from GVK resource")
+		return meta, errors.Wrap(err, "failed to get CustomResourceDefinition metadata")
 	}
 	return meta, nil
 }
