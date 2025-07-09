@@ -358,14 +358,10 @@ func (p *ironicProvisioner) configureImages(data provisioner.ManagementAccessDat
 	switch data.State {
 	case metal3api.StateInspecting,
 		metal3api.StatePreparing:
-		if deployImageInfo == nil {
-			if p.config.havePreprovImgBuilder {
-				result, err = transientError(provisioner.ErrNeedsPreprovisioningImage)
-			} else {
-				result, err = operationFailed("no preprovisioning image available")
-			}
-			return result, err
+		if deployImageInfo == nil && p.config.havePreprovImgBuilder {
+			result, err = transientError(provisioner.ErrNeedsPreprovisioningImage)
 		}
+		return result, err
 	default:
 	}
 
@@ -594,9 +590,9 @@ func (p *ironicProvisioner) setLiveIsoUpdateOptsForNode(ironicNode *nodes.Node, 
 }
 
 func (p *ironicProvisioner) setDirectDeployUpdateOptsForNode(ironicNode *nodes.Node, imageData *metal3api.Image, updater *clients.NodeUpdater) {
-	checksum, checksumType, ok := imageData.GetChecksum()
-	if !ok {
-		p.log.Info("image/checksum not found for host")
+	checksum, checksumType, err := imageData.GetChecksum()
+	if err != nil {
+		p.log.Info("image/checksum not found for host", "message", err)
 		return
 	}
 
@@ -632,9 +628,9 @@ func (p *ironicProvisioner) setDirectDeployUpdateOptsForNode(ironicNode *nodes.N
 func (p *ironicProvisioner) setCustomDeployUpdateOptsForNode(ironicNode *nodes.Node, imageData *metal3api.Image, updater *clients.NodeUpdater) {
 	var optValues clients.UpdateOptsData
 	if imageData != nil && imageData.URL != "" {
-		checksum, checksumType, ok := imageData.GetChecksum()
+		checksum, checksumType, err := imageData.GetChecksum()
 		// NOTE(dtantsur): all fields are optional for custom deploy
-		if ok {
+		if err == nil {
 			optValues = clients.UpdateOptsData{
 				"boot_iso":            nil,
 				"image_checksum":      nil,
@@ -1234,6 +1230,11 @@ func (p *ironicProvisioner) Provision(data provisioner.ProvisionData, forceReboo
 	ironicNode, err := p.getNode()
 	if err != nil {
 		return transientError(err)
+	}
+
+	if err = validateProvisionData(data); err != nil {
+		errorMessage := "Validation failed: " + err.Error()
+		return operationFailed(errorMessage)
 	}
 
 	p.log.Info("provisioning image to host", "state", ironicNode.ProvisionState)
