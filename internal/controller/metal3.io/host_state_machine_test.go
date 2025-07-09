@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -21,7 +20,7 @@ import (
 func testStateMachine(t *testing.T, host *metal3api.BareMetalHost) *hostStateMachine {
 	t.Helper()
 	r := newTestReconciler(t)
-	p, _ := r.ProvisionerFactory.NewProvisioner(context.TODO(), provisioner.BuildHostData(*host, bmc.Credentials{}),
+	p, _ := r.ProvisionerFactory.NewProvisioner(t.Context(), provisioner.BuildHostData(*host, bmc.Credentials{}),
 		func(reason, message string) {})
 	return newHostStateMachine(host, r, p, true)
 }
@@ -37,6 +36,7 @@ func testNewReconciler(host *metal3api.BareMetalHost) *BareMetalHostReconciler {
 	return reconciler
 }
 
+//nolint:dupl
 func TestProvisioningCapacity(t *testing.T) {
 	testCases := []struct {
 		Scenario string
@@ -166,6 +166,7 @@ func TestProvisioningCapacity(t *testing.T) {
 	}
 }
 
+//nolint:dupl
 func TestDeprovisioningCapacity(t *testing.T) {
 	testCases := []struct {
 		Scenario string
@@ -243,6 +244,16 @@ func TestDetach(t *testing.T) {
 		{
 			Scenario:                  "DeleteDetachedProvisionedHost",
 			Host:                      host(metal3api.StateProvisioned).SetOperationalStatus(metal3api.OperationalStatusDetached).setDeletion().withFinalizer().build(),
+			HasDetachedAnnotation:     true,
+			ExpectedDetach:            false,
+			ExpectedDirty:             true,
+			ExpectedOperationalStatus: metal3api.OperationalStatusDetached,
+			// Should move to Deleting without any Deprovisioning
+			ExpectedState: metal3api.StateDeleting,
+		},
+		{
+			Scenario:                  "DeleteDetachedExternallyProvisionedHost",
+			Host:                      host(metal3api.StateExternallyProvisioned).SetOperationalStatus(metal3api.OperationalStatusDetached).setDeletion().withFinalizer().build(),
 			HasDetachedAnnotation:     true,
 			ExpectedDetach:            false,
 			ExpectedDirty:             true,

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -91,8 +92,8 @@ func (m *MockServer) Handler(pattern string, handlerFunc http.HandlerFunc) *Mock
 
 func (m *MockServer) buildHandler(_ string) func(http.ResponseWriter, *http.Request) {
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		if response, ok := m.responsesByMethod[r.URL.Path][r.Method]; ok {
-			m.sendData(w, r, response.code, response.payload)
+		if resp, ok := m.responsesByMethod[r.URL.Path][r.Method]; ok {
+			m.sendData(w, r, resp.code, resp.payload)
 			return
 		}
 
@@ -152,7 +153,7 @@ func (m *MockServer) ResponseJSON(pattern string, payload interface{}) *MockServ
 func (m *MockServer) ErrorResponse(pattern string, errorCode int) *MockServer {
 	m.t.Logf("%s: adding error response handler for %s", m.name, pattern)
 	m.mux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
-		m.logRequest(r, fmt.Sprintf("%d", errorCode))
+		m.logRequest(r, strconv.Itoa(errorCode))
 		http.Error(w, "An error", errorCode)
 	})
 	return m
@@ -203,7 +204,7 @@ func (m *MockServer) AddDefaultResponse(patternWithVars string, httpMethod strin
 	pattern := "^" + regexp.MustCompile("{(.[^}]*)}").ReplaceAllString(patternWithVars, "(?P<$1>.[^/]*)") + "$"
 	m.t.Logf("%s: adding default response for %s (%s) -> {%d, %s}", m.name, patternWithVars, pattern, code, payload)
 
-	defaultResponse := defaultResponse{
+	defaultResp := defaultResponse{
 		re:     regexp.MustCompile(pattern),
 		method: httpMethod,
 		response: response{
@@ -212,7 +213,7 @@ func (m *MockServer) AddDefaultResponse(patternWithVars string, httpMethod strin
 		},
 	}
 
-	m.defaultResponses = append(m.defaultResponses, defaultResponse)
+	m.defaultResponses = append(m.defaultResponses, defaultResp)
 	return m
 }
 

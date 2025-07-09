@@ -9,6 +9,7 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -17,12 +18,12 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	metal3api "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/apps/v1"
@@ -35,7 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/cluster-api/test/framework"
 	testexec "sigs.k8s.io/cluster-api/test/framework/exec"
-	"sigs.k8s.io/cluster-api/util/patch"
+	"sigs.k8s.io/cluster-api/util/deprecated/v1beta1/patch"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/kustomize/api/krusty"
 	"sigs.k8s.io/kustomize/kyaml/filesys"
@@ -71,6 +72,13 @@ type WaitForBmhInProvisioningStateInput struct {
 	UndesiredStates []metal3api.ProvisioningState
 }
 
+type WaitForBmhInOperationalStatusInput struct {
+	Client          client.Client
+	Bmh             metal3api.BareMetalHost
+	State           metal3api.OperationalStatus
+	UndesiredStates []metal3api.OperationalStatus
+}
+
 func WaitForBmhInProvisioningState(ctx context.Context, input WaitForBmhInProvisioningStateInput, intervals ...interface{}) {
 	Eventually(func(g Gomega) {
 		bmh := metal3api.BareMetalHost{}
@@ -81,6 +89,23 @@ func WaitForBmhInProvisioningState(ctx context.Context, input WaitForBmhInProvis
 
 		// Check if the current state matches any of the undesired states
 		if isUndesiredState(currentStatus, input.UndesiredStates) {
+			StopTrying(fmt.Sprintf("BMH is in an unexpected state: %s", currentStatus)).Now()
+		}
+
+		g.Expect(currentStatus).To(Equal(input.State))
+	}, intervals...).Should(Succeed())
+}
+
+func WaitForBmhInOperationalStatus(ctx context.Context, input WaitForBmhInOperationalStatusInput, intervals ...interface{}) {
+	Eventually(func(g Gomega) {
+		bmh := metal3api.BareMetalHost{}
+		key := types.NamespacedName{Namespace: input.Bmh.Namespace, Name: input.Bmh.Name}
+		g.Expect(input.Client.Get(ctx, key, &bmh)).To(Succeed())
+
+		currentStatus := bmh.Status.OperationalStatus
+
+		// Check if the current state matches any of the undesired states
+		if slices.Contains(input.UndesiredStates, currentStatus) {
 			StopTrying(fmt.Sprintf("BMH is in an unexpected state: %s", currentStatus)).Now()
 		}
 
@@ -356,13 +381,13 @@ func (input *BuildAndApplyKustomizationInput) validate() error {
 		return nil
 	}
 	if input.WaitForDeployment && input.WaitIntervals == nil {
-		return errors.Errorf("WaitIntervals is expected if WaitForDeployment is set to true")
+		return errors.New("WaitIntervals is expected if WaitForDeployment is set to true")
 	}
 	if input.WatchDeploymentLogs && input.LogPath == "" {
-		return errors.Errorf("LogPath is expected if WatchDeploymentLogs is set to true")
+		return errors.New("LogPath is expected if WatchDeploymentLogs is set to true")
 	}
 	if input.DeploymentName == "" || input.DeploymentNamespace == "" {
-		return errors.Errorf("DeploymentName and DeploymentNamespace are expected if WaitForDeployment or WatchDeploymentLogs is true")
+		return errors.New("DeploymentName and DeploymentNamespace are expected if WaitForDeployment or WatchDeploymentLogs is true")
 	}
 	return nil
 }

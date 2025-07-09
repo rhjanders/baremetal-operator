@@ -18,7 +18,7 @@ import (
 	"sigs.k8s.io/cluster-api/test/framework"
 	"sigs.k8s.io/cluster-api/test/framework/bootstrap"
 	"sigs.k8s.io/cluster-api/util"
-	"sigs.k8s.io/cluster-api/util/patch"
+	"sigs.k8s.io/cluster-api/util/deprecated/v1beta1/patch"
 )
 
 const hardwareDetailsRelease04 = `
@@ -189,10 +189,10 @@ func RunUpgradeTest(ctx context.Context, input *BMOIronicUpgradeInput, upgradeCl
 	specName := "upgrade"
 	var upgradeDeploymentName, upgradeFromKustomization string
 	switch upgradeEntityName {
-	case "bmo":
+	case bmoString:
 		upgradeFromKustomization = initBMOKustomization
 		upgradeDeploymentName = "baremetal-operator-controller-manager"
-	case "ironic":
+	case ironicString:
 		upgradeFromKustomization = initIronicKustomization
 		upgradeDeploymentName = "ironic"
 	}
@@ -372,7 +372,7 @@ var _ = Describe("Upgrade", Label("optional", "upgrade"), func() {
 			Expect(upgradeClusterProvider).ToNot(BeNil(), "Failed to create a cluster")
 			kubeconfigPath = upgradeClusterProvider.GetKubeconfigPath()
 			DeferCleanup(func() {
-				By(fmt.Sprintf("Disposing the kind cluster %s", upgradeClusterName))
+				By("Disposing the kind cluster " + upgradeClusterName)
 				upgradeClusterProvider.Dispose(ctx)
 			})
 		}
@@ -409,9 +409,9 @@ var _ = Describe("Upgrade", Label("optional", "upgrade"), func() {
 			var upgradeFromKustomization string
 			upgradeEntityName := input.UpgradeEntityName
 			switch upgradeEntityName {
-			case "bmo":
+			case bmoString:
 				upgradeFromKustomization = input.InitBMOKustomization
-			case "ironic":
+			case ironicString:
 				upgradeFromKustomization = input.InitIronicKustomization
 			}
 			return fmt.Sprintf("Should upgrade %s from %s to latest version", input.UpgradeEntityName, upgradeFromKustomization)

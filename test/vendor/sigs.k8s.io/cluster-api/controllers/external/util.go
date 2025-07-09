@@ -28,7 +28,7 @@ import (
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
 // Get uses the client and reference to get an external, unstructured object.
@@ -246,14 +246,4 @@ func IsReady(obj *unstructured.Unstructured) (bool, error) {
 			obj.GroupVersionKind(), obj.GetName())
 	}
 	return ready && found, nil
-}
-
-// IsInitialized returns true if the Status.Initialized field on an external object is true.
-func IsInitialized(obj *unstructured.Unstructured) (bool, error) {
-	initialized, found, err := unstructured.NestedBool(obj.Object, "status", "initialized")
-	if err != nil {
-		return false, errors.Wrapf(err, "failed to determine %v %q initialized",
-			obj.GroupVersionKind(), obj.GetName())
-	}
-	return initialized && found, nil
 }
