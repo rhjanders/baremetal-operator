@@ -64,6 +64,7 @@ type ClusterResourceSetSpec struct {
 
 	// resources is a list of Secrets/ConfigMaps where each contains 1 or more resources to be applied to remote clusters.
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=100
 	Resources []ResourceRef `json:"resources,omitempty"`
 
@@ -118,6 +119,7 @@ func (c *ClusterResourceSetSpec) SetTypedStrategy(p ClusterResourceSetStrategy) 
 // ANCHOR: ClusterResourceSetStatus
 
 // ClusterResourceSetStatus defines the observed state of ClusterResourceSet.
+// +kubebuilder:validation:MinProperties=1
 type ClusterResourceSetStatus struct {
 	// conditions represents the observations of a ClusterResourceSet's current state.
 	// Known condition types are ResourcesApplied.
@@ -129,6 +131,7 @@ type ClusterResourceSetStatus struct {
 
 	// observedGeneration reflects the generation of the most recently observed ClusterResourceSet.
 	// +optional
+	// +kubebuilder:validation:Minimum=1
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 
 	// deprecated groups all the status fields that are deprecated and will be removed when all the nested field are removed.
@@ -202,11 +205,11 @@ type ClusterResourceSet struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// spec is the desired state of ClusterResourceSet.
-	// +optional
-	Spec ClusterResourceSetSpec `json:"spec,omitempty"`
+	// +required
+	Spec ClusterResourceSetSpec `json:"spec,omitempty,omitzero"`
 	// status is the observed state of ClusterResourceSet.
 	// +optional
-	Status ClusterResourceSetStatus `json:"status,omitempty"`
+	Status ClusterResourceSetStatus `json:"status,omitempty,omitzero"`
 }
 
 // +kubebuilder:object:root=true

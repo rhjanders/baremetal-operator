@@ -45,6 +45,7 @@ type ExtensionConfigSpec struct {
 
 // ClientConfig contains the information to make a client
 // connection with an Extension server.
+// +kubebuilder:validation:MinProperties=1
 type ClientConfig struct {
 	// url gives the location of the Extension server, in standard URL form
 	// (`scheme://host:port/path`).
@@ -65,7 +66,7 @@ type ClientConfig struct {
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=512
-	URL *string `json:"url,omitempty"`
+	URL string `json:"url,omitempty"`
 
 	// service is a reference to the Kubernetes service for the Extension server.
 	// Note: Exactly one of `url` or `service` must be specified.
@@ -101,7 +102,7 @@ type ServiceReference struct {
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=512
-	Path *string `json:"path,omitempty"`
+	Path string `json:"path,omitempty"`
 
 	// port is the port on the service that's hosting the Extension server.
 	// Defaults to 443.
@@ -115,6 +116,7 @@ type ServiceReference struct {
 // ANCHOR: ExtensionConfigStatus
 
 // ExtensionConfigStatus defines the observed state of ExtensionConfig.
+// +kubebuilder:validation:MinProperties=1
 type ExtensionConfigStatus struct {
 	// conditions represents the observations of a ExtensionConfig's current state.
 	// Known condition types are Discovered, Paused.
@@ -170,15 +172,15 @@ type ExtensionHandler struct {
 	RequestHook GroupVersionHook `json:"requestHook"`
 
 	// timeoutSeconds defines the timeout duration for client calls to the ExtensionHandler.
-	// Defaults to 10 is not set.
+	// Defaults to 10 if not set.
 	// +optional
-	TimeoutSeconds *int32 `json:"timeoutSeconds,omitempty"`
+	// +kubebuilder:validation:Minimum=1
+	TimeoutSeconds int32 `json:"timeoutSeconds,omitempty"`
 
 	// failurePolicy defines how failures in calls to the ExtensionHandler should be handled by a client.
 	// Defaults to Fail if not set.
 	// +optional
-	// +kubebuilder:validation:Enum=Ignore;Fail
-	FailurePolicy *FailurePolicy `json:"failurePolicy,omitempty"`
+	FailurePolicy FailurePolicy `json:"failurePolicy,omitempty"`
 }
 
 // GroupVersionHook defines the runtime hook when the ExtensionHandler is called.
@@ -201,6 +203,7 @@ type GroupVersionHook struct {
 // The following type of errors are never ignored by FailurePolicy Ignore:
 // - Misconfigurations (e.g. incompatible types)
 // - Extension explicitly returns a Status Failure.
+// +kubebuilder:validation:Enum=Ignore;Fail
 type FailurePolicy string
 
 const (
@@ -229,12 +232,12 @@ type ExtensionConfig struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// spec is the desired state of the ExtensionConfig.
-	// +optional
-	Spec ExtensionConfigSpec `json:"spec,omitempty"`
+	// +required
+	Spec ExtensionConfigSpec `json:"spec,omitempty,omitzero"`
 
 	// status is the current state of the ExtensionConfig
 	// +optional
-	Status ExtensionConfigStatus `json:"status,omitempty"`
+	Status ExtensionConfigStatus `json:"status,omitempty,omitzero"`
 }
 
 // GetV1Beta1Conditions returns the set of conditions for this object.

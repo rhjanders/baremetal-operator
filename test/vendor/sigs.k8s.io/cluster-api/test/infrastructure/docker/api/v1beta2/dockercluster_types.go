@@ -20,7 +20,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	clusterv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
@@ -37,14 +36,18 @@ type DockerClusterSpec struct {
 
 	// ControlPlaneEndpoint represents the endpoint used to communicate with the control plane.
 	// +optional
-	ControlPlaneEndpoint APIEndpoint `json:"controlPlaneEndpoint"`
+	ControlPlaneEndpoint APIEndpoint `json:"controlPlaneEndpoint,omitempty,omitzero"`
 
 	// FailureDomains are usually not defined in the spec.
 	// The docker provider is special since failure domains don't mean anything in a local docker environment.
 	// Instead, the docker cluster controller will simply copy these into the Status and allow the Cluster API
 	// controllers to do what they will with the defined failure domains.
 	// +optional
-	FailureDomains clusterv1beta1.FailureDomains `json:"failureDomains,omitempty"`
+	// +listType=map
+	// +listMapKey=name
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=100
+	FailureDomains []clusterv1.FailureDomain `json:"failureDomains,omitempty"`
 
 	// LoadBalancer allows defining configurations for the cluster load balancer.
 	// +optional
@@ -84,44 +87,76 @@ type ImageMeta struct {
 
 // DockerClusterStatus defines the observed state of DockerCluster.
 type DockerClusterStatus struct {
-	// Ready denotes that the docker cluster (infrastructure) is ready.
-	// +optional
-	Ready bool `json:"ready"`
-
-	// FailureDomains don't mean much in CAPD since it's all local, but we can see how the rest of cluster API
-	// will use this if we populate it.
-	// +optional
-	FailureDomains clusterv1beta1.FailureDomains `json:"failureDomains,omitempty"`
-
-	// Conditions defines current service state of the DockerCluster.
-	// +optional
-	Conditions clusterv1.Conditions `json:"conditions,omitempty"`
-
-	// v1beta2 groups all the fields that will be added or modified in DockerCluster's's status with the V1Beta2 version.
-	// +optional
-	V1Beta2 *DockerClusterV1Beta2Status `json:"v1beta2,omitempty"`
-}
-
-// DockerClusterV1Beta2Status groups all the fields that will be added or modified in DockerCluster with the V1Beta2 version.
-// See https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/proposals/20240916-improve-status-in-CAPI-resources.md for more context.
-type DockerClusterV1Beta2Status struct {
 	// conditions represents the observations of a DockerCluster's current state.
-	// Known condition types are Ready, LoadBalancerAvailable, Deleting, Paused.
+	// Known condition types are LoadBalancerAvailable and Paused.
 	// +optional
 	// +listType=map
 	// +listMapKey=type
 	// +kubebuilder:validation:MaxItems=32
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	// initialization provides observations of the DockerCluster initialization process.
+	// NOTE: Fields in this struct are part of the Cluster API contract and are used to orchestrate initial Cluster provisioning.
+	// +optional
+	Initialization DockerClusterInitializationStatus `json:"initialization,omitempty,omitzero"`
+
+	// failureDomains is a list of failure domain objects synced from the infrastructure provider.
+	// It don't mean much in CAPD since it's all local, but we can see how the rest of cluster API
+	// will use this if we populate it.
+	// +optional
+	// +listType=map
+	// +listMapKey=name
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=100
+	FailureDomains []clusterv1.FailureDomain `json:"failureDomains,omitempty"`
+
+	// deprecated groups all the status fields that are deprecated and will be removed when all the nested field are removed.
+	// +optional
+	Deprecated *DockerClusterDeprecatedStatus `json:"deprecated,omitempty"`
+}
+
+// DockerClusterInitializationStatus provides observations of the DockerCluster initialization process.
+// +kubebuilder:validation:MinProperties=1
+type DockerClusterInitializationStatus struct {
+	// provisioned is true when the infrastructure provider reports that the Cluster's infrastructure is fully provisioned.
+	// NOTE: this field is part of the Cluster API contract, and it is used to orchestrate initial Cluster provisioning.
+	// +optional
+	Provisioned *bool `json:"provisioned,omitempty"`
+}
+
+// DockerClusterDeprecatedStatus groups all the status fields that are deprecated and will be removed when support for v1beta1 will be dropped.
+// See https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/proposals/20240916-improve-status-in-CAPI-resources.md for more context.
+type DockerClusterDeprecatedStatus struct {
+	// v1beta1 groups all the status fields that are deprecated and will be removed when support for v1beta1 will be dropped.
+	// +optional
+	V1Beta1 *DockerClusterV1Beta1DeprecatedStatus `json:"v1beta1,omitempty"`
+}
+
+// DockerClusterV1Beta1DeprecatedStatus groups all the status fields that are deprecated and will be removed when support for v1beta1 will be dropped.
+// See https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/proposals/20240916-improve-status-in-CAPI-resources.md for more context.
+type DockerClusterV1Beta1DeprecatedStatus struct {
+	// conditions defines current service state of the DockerCluster.
+	//
+	// +optional
+	//
+	// Deprecated: This field is deprecated and is going to be removed when support for v1beta1 is dropped.
+	Conditions clusterv1.Conditions `json:"conditions,omitempty"`
 }
 
 // APIEndpoint represents a reachable Kubernetes API endpoint.
+// +kubebuilder:validation:MinProperties=1
 type APIEndpoint struct {
-	// Host is the hostname on which the API server is serving.
-	Host string `json:"host"`
+	// host is the hostname on which the API server is serving.
+	// +optional
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=512
+	Host string `json:"host,omitempty"`
 
-	// Port is the port on which the API server is serving.
-	// Defaults to 6443 if not set.
-	Port int `json:"port"`
+	// port is the port on which the API server is serving.
+	// +optional
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=65535
+	Port int32 `json:"port,omitempty"`
 }
 
 // +kubebuilder:resource:path=dockerclusters,scope=Namespaced,categories=cluster-api
@@ -142,28 +177,31 @@ type DockerCluster struct {
 
 // GetV1Beta1Conditions returns the set of conditions for this object.
 func (c *DockerCluster) GetV1Beta1Conditions() clusterv1.Conditions {
-	return c.Status.Conditions
+	if c.Status.Deprecated == nil || c.Status.Deprecated.V1Beta1 == nil {
+		return nil
+	}
+	return c.Status.Deprecated.V1Beta1.Conditions
 }
 
 // SetV1Beta1Conditions sets the conditions on this object.
 func (c *DockerCluster) SetV1Beta1Conditions(conditions clusterv1.Conditions) {
-	c.Status.Conditions = conditions
+	if c.Status.Deprecated == nil {
+		c.Status.Deprecated = &DockerClusterDeprecatedStatus{}
+	}
+	if c.Status.Deprecated.V1Beta1 == nil {
+		c.Status.Deprecated.V1Beta1 = &DockerClusterV1Beta1DeprecatedStatus{}
+	}
+	c.Status.Deprecated.V1Beta1.Conditions = conditions
 }
 
 // GetConditions returns the set of conditions for this object.
 func (c *DockerCluster) GetConditions() []metav1.Condition {
-	if c.Status.V1Beta2 == nil {
-		return nil
-	}
-	return c.Status.V1Beta2.Conditions
+	return c.Status.Conditions
 }
 
 // SetConditions sets conditions for an API object.
 func (c *DockerCluster) SetConditions(conditions []metav1.Condition) {
-	if c.Status.V1Beta2 == nil {
-		c.Status.V1Beta2 = &DockerClusterV1Beta2Status{}
-	}
-	c.Status.V1Beta2.Conditions = conditions
+	c.Status.Conditions = conditions
 }
 
 // +kubebuilder:object:root=true

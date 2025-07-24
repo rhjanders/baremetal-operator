@@ -34,6 +34,7 @@ import (
 
 	clusterv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	"sigs.k8s.io/cluster-api/controllers/external"
 	"sigs.k8s.io/cluster-api/internal/controllers/topology/machineset"
 	. "sigs.k8s.io/cluster-api/test/framework/ginkgoextensions"
 	"sigs.k8s.io/cluster-api/test/framework/internal/log"
@@ -159,7 +160,7 @@ func AssertMachineDeploymentFailureDomains(ctx context.Context, input AssertMach
 	Expect(input.Lister).ToNot(BeNil(), "Invalid argument. input.Lister can't be nil when calling AssertMachineDeploymentFailureDomains")
 	Expect(input.MachineDeployment).ToNot(BeNil(), "Invalid argument. input.MachineDeployment can't be nil when calling AssertMachineDeploymentFailureDomains")
 
-	machineDeploymentFD := ptr.Deref(input.MachineDeployment.Spec.Template.Spec.FailureDomain, "<None>")
+	machineDeploymentFD := input.MachineDeployment.Spec.Template.Spec.FailureDomain
 
 	Byf("Checking all the machines controlled by %s are in the %q failure domain", input.MachineDeployment.Name, machineDeploymentFD)
 	selectorMap, err := metav1.LabelSelectorAsMap(&input.MachineDeployment.Spec.Selector)
@@ -172,7 +173,7 @@ func AssertMachineDeploymentFailureDomains(ctx context.Context, input AssertMach
 
 	for i := range ms.Items {
 		machineSet := ms.Items[i]
-		machineSetFD := ptr.Deref(machineSet.Spec.Template.Spec.FailureDomain, "<None>")
+		machineSetFD := machineSet.Spec.Template.Spec.FailureDomain
 		Expect(machineSetFD).To(Equal(machineDeploymentFD), "MachineSet %s is in the %q failure domain, expecting %q", machineSet.Name, machineSetFD, machineDeploymentFD)
 
 		selectorMap, err = metav1.LabelSelectorAsMap(&machineSet.Spec.Selector)
@@ -184,7 +185,7 @@ func AssertMachineDeploymentFailureDomains(ctx context.Context, input AssertMach
 		}, retryableOperationTimeout, retryableOperationInterval).Should(Succeed(), "Failed to list Machines for Cluster %s", klog.KObj(input.Cluster))
 
 		for _, machine := range machines.Items {
-			machineFD := ptr.Deref(machine.Spec.FailureDomain, "<None>")
+			machineFD := machine.Spec.FailureDomain
 			Expect(machineFD).To(Equal(machineDeploymentFD), "Machine %s is in the %q failure domain, expecting %q", machine.Name, machineFD, machineDeploymentFD)
 		}
 	}
@@ -249,7 +250,7 @@ func UpgradeMachineDeploymentsAndWait(ctx context.Context, input UpgradeMachineD
 		Expect(err).ToNot(HaveOccurred())
 
 		oldVersion := deployment.Spec.Template.Spec.Version
-		deployment.Spec.Template.Spec.Version = &input.UpgradeVersion
+		deployment.Spec.Template.Spec.Version = input.UpgradeVersion
 		if input.UpgradeMachineTemplate != nil {
 			deployment.Spec.Template.Spec.InfrastructureRef.Name = *input.UpgradeMachineTemplate
 		}
@@ -258,7 +259,7 @@ func UpgradeMachineDeploymentsAndWait(ctx context.Context, input UpgradeMachineD
 		}, retryableOperationTimeout, retryableOperationInterval).Should(Succeed(), "Failed to patch Kubernetes version on MachineDeployment %s", klog.KObj(deployment))
 
 		log.Logf("Waiting for Kubernetes versions of machines in MachineDeployment %s to be upgraded from %s to %s",
-			klog.KObj(deployment), *oldVersion, input.UpgradeVersion)
+			klog.KObj(deployment), oldVersion, input.UpgradeVersion)
 		WaitForMachineDeploymentMachinesToBeUpgraded(ctx, WaitForMachineDeploymentMachinesToBeUpgradedInput{
 			Lister:                   mgmtClient,
 			Cluster:                  input.Cluster,
@@ -293,16 +294,12 @@ func UpgradeMachineDeploymentInfrastructureRefAndWait(ctx context.Context, input
 
 		log.Logf("Patching the new infrastructure ref to Machine Deployment %s", klog.KObj(deployment))
 		// Retrieve infra object.
-		infraRef := deployment.Spec.Template.Spec.InfrastructureRef
-		infraObj := &unstructured.Unstructured{}
-		infraObj.SetGroupVersionKind(infraRef.GroupVersionKind())
-		key := client.ObjectKey{
-			Namespace: input.Cluster.Namespace,
-			Name:      infraRef.Name,
-		}
+		infraRef := &deployment.Spec.Template.Spec.InfrastructureRef
+		var infraObj *unstructured.Unstructured
 		Eventually(func() error {
-			return mgmtClient.Get(ctx, key, infraObj)
-		}, retryableOperationTimeout, retryableOperationInterval).Should(Succeed(), "Failed to get infra object %s for MachineDeployment %s", klog.KRef(key.Namespace, key.Name), klog.KObj(deployment))
+			infraObj, err = external.GetObjectFromContractVersionedRef(ctx, mgmtClient, infraRef, deployment.Namespace)
+			return err
+		}, retryableOperationTimeout, retryableOperationInterval).Should(Succeed(), "Failed to get infra object %s for MachineDeployment %s", klog.KRef(deployment.Namespace, infraRef.Name), klog.KObj(deployment))
 
 		// Create a new infra object.
 		newInfraObj := infraObj
@@ -317,7 +314,7 @@ func UpgradeMachineDeploymentInfrastructureRefAndWait(ctx context.Context, input
 		patchHelper, err := patch.NewHelper(deployment, mgmtClient)
 		Expect(err).ToNot(HaveOccurred())
 		infraRef.Name = newInfraObjName
-		deployment.Spec.Template.Spec.InfrastructureRef = infraRef
+		deployment.Spec.Template.Spec.InfrastructureRef = *infraRef
 		Eventually(func() error {
 			return patchHelper.Patch(ctx, deployment)
 		}, retryableOperationTimeout, retryableOperationInterval).Should(Succeed(), "Failed to patch new infrastructure ref to MachineDeployment %s", klog.KObj(deployment))

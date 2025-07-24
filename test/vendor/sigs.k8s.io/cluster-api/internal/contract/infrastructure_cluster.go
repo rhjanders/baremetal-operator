@@ -26,6 +26,7 @@ import (
 
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/utils/ptr"
 
 	clusterv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
@@ -165,7 +166,7 @@ func (d *FailureDomains) Get(obj *unstructured.Unstructured) ([]clusterv1.Failur
 			domain := domains[name]
 			domainsArray = append(domainsArray, clusterv1.FailureDomain{
 				Name:         name,
-				ControlPlane: domain.ControlPlane,
+				ControlPlane: ptr.To(domain.ControlPlane),
 				Attributes:   domain.Attributes,
 			})
 		}
@@ -189,6 +190,22 @@ func (d *FailureDomains) Get(obj *unstructured.Unstructured) ([]clusterv1.Failur
 	if err := json.Unmarshal(s, &domains); err != nil {
 		return nil, errors.Wrapf(err, "failed to unmarshal field at %s to json", "."+strings.Join(d.path, "."))
 	}
+
+	for i, domain := range domains {
+		if domain.ControlPlane == nil {
+			domain.ControlPlane = ptr.To(false)
+			domains[i] = domain
+		}
+	}
+
+	// Sort the failureDomains to ensure deterministic order even if the failureDomains field
+	// on the InfraCluster is not sorted.
+	slices.SortFunc(domains, func(a, b clusterv1.FailureDomain) int {
+		if a.Name < b.Name {
+			return -1
+		}
+		return 1
+	})
 
 	return domains, nil
 }

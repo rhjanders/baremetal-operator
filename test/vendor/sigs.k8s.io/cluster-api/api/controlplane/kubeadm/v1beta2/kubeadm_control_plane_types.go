@@ -17,7 +17,6 @@ limitations under the License.
 package v1beta2
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -442,8 +441,8 @@ type KubeadmControlPlaneSpec struct {
 
 	// kubeadmConfigSpec is a KubeadmConfigSpec
 	// to use for initializing and joining machines to the control plane.
-	// +required
-	KubeadmConfigSpec bootstrapv1.KubeadmConfigSpec `json:"kubeadmConfigSpec"`
+	// +optional
+	KubeadmConfigSpec bootstrapv1.KubeadmConfigSpec `json:"kubeadmConfigSpec,omitempty,omitzero"`
 
 	// rolloutBefore is a field to indicate a rollout should be performed
 	// if the specified criteria is met.
@@ -481,12 +480,12 @@ type KubeadmControlPlaneMachineTemplate struct {
 	// metadata is the standard object's metadata.
 	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	// +optional
-	ObjectMeta clusterv1.ObjectMeta `json:"metadata,omitempty"`
+	ObjectMeta clusterv1.ObjectMeta `json:"metadata,omitempty,omitzero"`
 
 	// infrastructureRef is a required reference to a custom resource
 	// offered by an infrastructure provider.
 	// +required
-	InfrastructureRef corev1.ObjectReference `json:"infrastructureRef"`
+	InfrastructureRef clusterv1.ContractVersionedObjectReference `json:"infrastructureRef"`
 
 	// readinessGates specifies additional conditions to include when evaluating Machine Ready condition;
 	// KubeadmControlPlane will always add readinessGates for the condition it is setting on the Machine:
@@ -496,7 +495,6 @@ type KubeadmControlPlaneMachineTemplate struct {
 	// This field can be used e.g. to instruct the machine controller to include in the computation for Machine's ready
 	// computation a condition, managed by an external controllers, reporting the status of special software/hardware installed on the Machine.
 	//
-	// NOTE: This field is considered only for computing v1beta2 conditions.
 	// +optional
 	// +listType=map
 	// +listMapKey=conditionType
@@ -584,7 +582,7 @@ type RemediationStrategy struct {
 	// If not set, a retry will happen immediately.
 	// +optional
 	// +kubebuilder:validation:Minimum=0
-	RetryPeriodSeconds int32 `json:"retryPeriodSeconds,omitempty"`
+	RetryPeriodSeconds *int32 `json:"retryPeriodSeconds,omitempty"`
 
 	// minHealthyPeriodSeconds defines the duration after which KCP will consider any failure to a machine unrelated
 	// from the previous one. In this case the remediation is not considered a retry anymore, and thus the retry
@@ -625,6 +623,7 @@ type MachineNamingStrategy struct {
 }
 
 // KubeadmControlPlaneStatus defines the observed state of KubeadmControlPlane.
+// +kubebuilder:validation:MinProperties=1
 type KubeadmControlPlaneStatus struct {
 	// conditions represents the observations of a KubeadmControlPlane's current state.
 	// Known condition types are Available, CertificatesAvailable, EtcdClusterAvailable, MachinesReady, MachinesUpToDate,
@@ -638,7 +637,7 @@ type KubeadmControlPlaneStatus struct {
 	// initialization provides observations of the KubeadmControlPlane initialization process.
 	// NOTE: Fields in this struct are part of the Cluster API contract and are used to orchestrate initial Machine provisioning.
 	// +optional
-	Initialization *KubeadmControlPlaneInitializationStatus `json:"initialization,omitempty"`
+	Initialization KubeadmControlPlaneInitializationStatus `json:"initialization,omitempty,omitzero"`
 
 	// selector is the label selector in string format to avoid introspection
 	// by clients, and is used to provide the CRD-based integration for the
@@ -672,10 +671,11 @@ type KubeadmControlPlaneStatus struct {
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=256
-	Version *string `json:"version,omitempty"`
+	Version string `json:"version,omitempty"`
 
 	// observedGeneration is the latest generation observed by the controller.
 	// +optional
+	// +kubebuilder:validation:Minimum=1
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 
 	// lastRemediation stores info about last remediation performed.
@@ -688,13 +688,14 @@ type KubeadmControlPlaneStatus struct {
 }
 
 // KubeadmControlPlaneInitializationStatus provides observations of the KubeadmControlPlane initialization process.
+// +kubebuilder:validation:MinProperties=1
 type KubeadmControlPlaneInitializationStatus struct {
 	// controlPlaneInitialized is true when the KubeadmControlPlane provider reports that the Kubernetes control plane is initialized;
 	// A control plane is considered initialized when it can accept requests, no matter if this happens before
 	// the control plane is fully provisioned or not.
 	// NOTE: this field is part of the Cluster API contract, and it is used to orchestrate initial Machine provisioning.
 	// +optional
-	ControlPlaneInitialized bool `json:"controlPlaneInitialized,omitempty"`
+	ControlPlaneInitialized *bool `json:"controlPlaneInitialized,omitempty"`
 }
 
 // KubeadmControlPlaneDeprecatedStatus groups all the status fields that are deprecated and will be removed in a future version.
@@ -732,7 +733,7 @@ type KubeadmControlPlaneV1Beta1DeprecatedStatus struct {
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=10240
-	FailureMessage *string `json:"failureMessage,omitempty"`
+	FailureMessage *string `json:"failureMessage,omitempty"` //nolint:kubeapilinter // field will be removed when v1beta1 is removed
 
 	// updatedReplicas is the total number of non-terminated machines targeted by this control plane
 	// that have the desired template spec.
@@ -740,14 +741,14 @@ type KubeadmControlPlaneV1Beta1DeprecatedStatus struct {
 	// Deprecated: This field is deprecated and is going to be removed when support for v1beta1 will be dropped. Please see https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/proposals/20240916-improve-status-in-CAPI-resources.md for more details.
 	//
 	// +optional
-	UpdatedReplicas int32 `json:"updatedReplicas"`
+	UpdatedReplicas int32 `json:"updatedReplicas"` //nolint:kubeapilinter // field will be removed when v1beta1 is removed
 
 	// readyReplicas is the total number of fully running and ready control plane machines.
 	//
 	// Deprecated: This field is deprecated and is going to be removed when support for v1beta1 will be dropped. Please see https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/proposals/20240916-improve-status-in-CAPI-resources.md for more details.
 	//
 	// +optional
-	ReadyReplicas int32 `json:"readyReplicas"`
+	ReadyReplicas int32 `json:"readyReplicas"` //nolint:kubeapilinter // field will be removed when v1beta1 is removed
 
 	// unavailableReplicas is the total number of unavailable machines targeted by this control plane.
 	// This is the total number of machines that are still required for
@@ -758,7 +759,7 @@ type KubeadmControlPlaneV1Beta1DeprecatedStatus struct {
 	// Deprecated: This field is deprecated and is going to be removed when support for v1beta1 will be dropped. Please see https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/proposals/20240916-improve-status-in-CAPI-resources.md for more details.
 	//
 	// +optional
-	UnavailableReplicas int32 `json:"unavailableReplicas"`
+	UnavailableReplicas int32 `json:"unavailableReplicas"` //nolint:kubeapilinter // field will be removed when v1beta1 is removed
 }
 
 // LastRemediationStatus  stores info about last remediation performed.
@@ -771,9 +772,9 @@ type LastRemediationStatus struct {
 	// +kubebuilder:validation:MaxLength=253
 	Machine string `json:"machine"`
 
-	// timestamp is when last remediation happened. It is represented in RFC3339 form and is in UTC.
+	// time is when last remediation happened. It is represented in RFC3339 form and is in UTC.
 	// +required
-	Timestamp metav1.Time `json:"timestamp"`
+	Time metav1.Time `json:"time"`
 
 	// retryCount used to keep track of remediation retry for the last remediated machine.
 	// A retry happens when a machine that was created as a replacement for an unhealthy machine also fails.
@@ -806,11 +807,11 @@ type KubeadmControlPlane struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// spec is the desired state of KubeadmControlPlane.
-	// +optional
-	Spec KubeadmControlPlaneSpec `json:"spec,omitempty"`
+	// +required
+	Spec KubeadmControlPlaneSpec `json:"spec,omitempty,omitzero"`
 	// status is the observed state of KubeadmControlPlane.
 	// +optional
-	Status KubeadmControlPlaneStatus `json:"status,omitempty"`
+	Status KubeadmControlPlaneStatus `json:"status,omitempty,omitzero"`
 }
 
 // GetV1Beta1Conditions returns the set of conditions for this object.

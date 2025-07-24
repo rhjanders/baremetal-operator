@@ -67,9 +67,8 @@ type MachineSetSpec struct {
 
 	// deletePolicy defines the policy used to identify nodes to delete when downscaling.
 	// Defaults to "Random".  Valid values are "Random, "Newest", "Oldest"
-	// +kubebuilder:validation:Enum=Random;Newest;Oldest
 	// +optional
-	DeletePolicy string `json:"deletePolicy,omitempty"`
+	DeletePolicy MachineSetDeletePolicy `json:"deletePolicy,omitempty"`
 
 	// selector is a label query over machines that should match the replica count.
 	// Label keys and values that must match in order to be controlled by this MachineSet.
@@ -81,8 +80,8 @@ type MachineSetSpec struct {
 	// template is the object that describes the machine that will be created if
 	// insufficient replicas are detected.
 	// Object references to custom resources are treated as templates.
-	// +optional
-	Template MachineTemplateSpec `json:"template,omitempty"`
+	// +required
+	Template MachineTemplateSpec `json:"template"`
 
 	// machineNamingStrategy allows changing the naming pattern used when creating Machines.
 	// Note: InfraMachines & BootstrapConfigs will use the same name as the corresponding Machines.
@@ -237,18 +236,19 @@ type MachineTemplateSpec struct {
 	// metadata is the standard object's metadata.
 	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	// +optional
-	ObjectMeta `json:"metadata,omitempty"`
+	ObjectMeta `json:"metadata,omitempty,omitzero"`
 
 	// spec is the specification of the desired behavior of the machine.
 	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
-	// +optional
-	Spec MachineSpec `json:"spec,omitempty"`
+	// +required
+	Spec MachineSpec `json:"spec"`
 }
 
 // ANCHOR_END: MachineTemplateSpec
 
 // MachineSetDeletePolicy defines how priority is assigned to nodes to delete when
 // downscaling a MachineSet. Defaults to "Random".
+// +kubebuilder:validation:Enum=Random;Newest;Oldest
 type MachineSetDeletePolicy string
 
 const (
@@ -277,6 +277,7 @@ const (
 // ANCHOR: MachineSetStatus
 
 // MachineSetStatus defines the observed state of MachineSet.
+// +kubebuilder:validation:MinProperties=1
 type MachineSetStatus struct {
 	// conditions represents the observations of a MachineSet's current state.
 	// Known condition types are MachinesReady, MachinesUpToDate, ScalingUp, ScalingDown, Remediating, Deleting, Paused.
@@ -312,6 +313,7 @@ type MachineSetStatus struct {
 
 	// observedGeneration reflects the generation of the most recently observed MachineSet.
 	// +optional
+	// +kubebuilder:validation:Minimum=1
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 
 	// deprecated groups all the status fields that are deprecated and will be removed when all the nested field are removed.
@@ -374,28 +376,28 @@ type MachineSetV1Beta1DeprecatedStatus struct {
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=10240
-	FailureMessage *string `json:"failureMessage,omitempty"`
+	FailureMessage *string `json:"failureMessage,omitempty"` //nolint:kubeapilinter // field will be removed when v1beta1 is removed
 
 	// fullyLabeledReplicas is the number of replicas that have labels matching the labels of the machine template of the MachineSet.
 	//
 	// Deprecated: This field is deprecated and is going to be removed when support for v1beta1 will be dropped. Please see https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/proposals/20240916-improve-status-in-CAPI-resources.md for more details.
 	//
 	// +optional
-	FullyLabeledReplicas int32 `json:"fullyLabeledReplicas"`
+	FullyLabeledReplicas int32 `json:"fullyLabeledReplicas"` //nolint:kubeapilinter // field will be removed when v1beta1 is removed
 
 	// readyReplicas is the number of ready replicas for this MachineSet. A machine is considered ready when the node has been created and is "Ready".
 	//
 	// Deprecated: This field is deprecated and is going to be removed when support for v1beta1 will be dropped. Please see https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/proposals/20240916-improve-status-in-CAPI-resources.md for more details.
 	//
 	// +optional
-	ReadyReplicas int32 `json:"readyReplicas"`
+	ReadyReplicas int32 `json:"readyReplicas"` //nolint:kubeapilinter // field will be removed when v1beta1 is removed
 
 	// availableReplicas is the number of available replicas (ready for at least minReadySeconds) for this MachineSet.
 	//
 	// Deprecated: This field is deprecated and is going to be removed when support for v1beta1 will be dropped. Please see https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/proposals/20240916-improve-status-in-CAPI-resources.md for more details.
 	//
 	// +optional
-	AvailableReplicas int32 `json:"availableReplicas"`
+	AvailableReplicas int32 `json:"availableReplicas"` //nolint:kubeapilinter // field will be removed when v1beta1 is removed
 }
 
 // ANCHOR_END: MachineSetStatus
@@ -445,11 +447,11 @@ type MachineSet struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// spec is the desired state of MachineSet.
-	// +optional
-	Spec MachineSetSpec `json:"spec,omitempty"`
+	// +required
+	Spec MachineSetSpec `json:"spec,omitempty,omitzero"`
 	// status is the observed state of MachineSet.
 	// +optional
-	Status MachineSetStatus `json:"status,omitempty"`
+	Status MachineSetStatus `json:"status,omitempty,omitzero"`
 }
 
 // GetV1Beta1Conditions returns the set of conditions for the MachineSet.

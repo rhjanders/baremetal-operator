@@ -57,6 +57,7 @@ type ResourceSetBinding struct {
 
 	// resources is a list of resources that the ClusterResourceSet has.
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=100
 	Resources []ResourceBinding `json:"resources,omitempty"`
 }
@@ -92,14 +93,14 @@ func (r *ResourceSetBinding) SetBinding(resourceBinding ResourceBinding) {
 // GetOrCreateBinding returns the ResourceSetBinding for a given ClusterResourceSet if exists,
 // otherwise creates one and updates ClusterResourceSet with it.
 func (c *ClusterResourceSetBinding) GetOrCreateBinding(clusterResourceSet *ClusterResourceSet) *ResourceSetBinding {
-	for _, binding := range c.Spec.Bindings {
-		if binding.ClusterResourceSetName == clusterResourceSet.Name {
-			return binding
+	for i := range c.Spec.Bindings {
+		if c.Spec.Bindings[i].ClusterResourceSetName == clusterResourceSet.Name {
+			return &c.Spec.Bindings[i]
 		}
 	}
-	binding := &ResourceSetBinding{ClusterResourceSetName: clusterResourceSet.Name, Resources: []ResourceBinding{}}
+	binding := ResourceSetBinding{ClusterResourceSetName: clusterResourceSet.Name, Resources: []ResourceBinding{}}
 	c.Spec.Bindings = append(c.Spec.Bindings, binding)
-	return binding
+	return &c.Spec.Bindings[len(c.Spec.Bindings)-1]
 }
 
 // RemoveBinding removes the ClusterResourceSet from the ClusterResourceSetBinding Bindings list.
@@ -127,8 +128,8 @@ type ClusterResourceSetBinding struct {
 	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 	// spec is the desired state of ClusterResourceSetBinding.
-	// +optional
-	Spec ClusterResourceSetBindingSpec `json:"spec,omitempty"`
+	// +required
+	Spec ClusterResourceSetBindingSpec `json:"spec,omitempty,omitzero"`
 }
 
 // ANCHOR: ClusterResourceSetBindingSpec
@@ -137,8 +138,9 @@ type ClusterResourceSetBinding struct {
 type ClusterResourceSetBindingSpec struct {
 	// bindings is a list of ClusterResourceSets and their resources.
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=100
-	Bindings []*ResourceSetBinding `json:"bindings,omitempty"`
+	Bindings []ResourceSetBinding `json:"bindings,omitempty"`
 
 	// clusterName is the name of the Cluster this binding applies to.
 	// +required

@@ -17,7 +17,6 @@ limitations under the License.
 package v1beta2
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -78,6 +77,7 @@ type InitConfiguration struct {
 	// bootstrapTokens is respected at `kubeadm init` time and describes a set of Bootstrap Tokens to create.
 	// This information IS NOT uploaded to the kubeadm cluster configmap, partly because of its sensitive nature
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=100
 	BootstrapTokens []BootstrapToken `json:"bootstrapTokens,omitempty"`
 
@@ -85,7 +85,7 @@ type InitConfiguration struct {
 	// When used in the context of control plane nodes, NodeRegistration should remain consistent
 	// across both InitConfiguration and JoinConfiguration
 	// +optional
-	NodeRegistration NodeRegistrationOptions `json:"nodeRegistration,omitempty"`
+	NodeRegistration NodeRegistrationOptions `json:"nodeRegistration,omitempty,omitzero"`
 
 	// localAPIEndpoint represents the endpoint of the API server instance that's deployed on this control plane node
 	// In HA setups, this differs from ClusterConfiguration.ControlPlaneEndpoint in the sense that ControlPlaneEndpoint
@@ -94,12 +94,13 @@ type InitConfiguration struct {
 	// on. By default, kubeadm tries to auto-detect the IP of the default interface and use that, but in case that process
 	// fails you may set the desired value here.
 	// +optional
-	LocalAPIEndpoint APIEndpoint `json:"localAPIEndpoint,omitempty"`
+	LocalAPIEndpoint APIEndpoint `json:"localAPIEndpoint,omitempty,omitzero"`
 
 	// skipPhases is a list of phases to skip during command execution.
 	// The list of phases can be obtained with the "kubeadm init --help" command.
 	// This option takes effect only on Kubernetes >=1.22.0.
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=50
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:MaxLength=256
@@ -120,23 +121,40 @@ type ClusterConfiguration struct {
 	// etcd holds configuration for etcd.
 	// NB: This value defaults to a Local (stacked) etcd
 	// +optional
-	Etcd Etcd `json:"etcd,omitempty"`
+	Etcd Etcd `json:"etcd,omitempty,omitzero"`
+
+	// controlPlaneEndpoint sets a stable IP address or DNS name for the control plane; it
+	// can be a valid IP address or a RFC-1123 DNS subdomain, both with optional TCP port.
+	// In case the ControlPlaneEndpoint is not specified, the AdvertiseAddress + BindPort
+	// are used; in case the ControlPlaneEndpoint is specified but without a TCP port,
+	// the BindPort is used.
+	// Possible usages are:
+	// e.g. In a cluster with more than one control plane instances, this field should be
+	// assigned the address of the external load balancer in front of the
+	// control plane instances.
+	// e.g.  in environments with enforced node recycling, the ControlPlaneEndpoint
+	// could be used for assigning a stable DNS to the control plane.
+	// NB: This value defaults to the first value in the Cluster object status.apiEndpoints array.
+	// +optional
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=512
+	ControlPlaneEndpoint string `json:"controlPlaneEndpoint,omitempty"`
 
 	// apiServer contains extra settings for the API server control plane component
 	// +optional
-	APIServer APIServer `json:"apiServer,omitempty"`
+	APIServer APIServer `json:"apiServer,omitempty,omitzero"`
 
 	// controllerManager contains extra settings for the controller manager control plane component
 	// +optional
-	ControllerManager ControlPlaneComponent `json:"controllerManager,omitempty"`
+	ControllerManager ControllerManager `json:"controllerManager,omitempty,omitzero"`
 
 	// scheduler contains extra settings for the scheduler control plane component
 	// +optional
-	Scheduler ControlPlaneComponent `json:"scheduler,omitempty"`
+	Scheduler Scheduler `json:"scheduler,omitempty,omitzero"`
 
 	// dns defines the options for the DNS add-on installed in the cluster.
 	// +optional
-	DNS DNS `json:"dns,omitempty"`
+	DNS DNS `json:"dns,omitempty,omitzero"`
 
 	// certificatesDir specifies where to store or look for all required certificates.
 	// NB: if not provided, this will default to `/etc/kubernetes/pki`
@@ -166,8 +184,9 @@ type ClusterConfiguration struct {
 	FeatureGates map[string]bool `json:"featureGates,omitempty"`
 }
 
-// ControlPlaneComponent holds settings common to control plane component of the cluster.
-type ControlPlaneComponent struct {
+// APIServer holds settings necessary for API server deployments in the cluster.
+// +kubebuilder:validation:MinProperties=1
+type APIServer struct {
 	// extraArgs is a list of args to pass to the control plane component.
 	// The arg name must match the command line flag name except without leading dash(es).
 	// Extra arguments will override existing default arguments set by kubeadm.
@@ -182,6 +201,7 @@ type ControlPlaneComponent struct {
 
 	// extraVolumes is an extra set of host volumes, mounted to the control plane component.
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=100
 	ExtraVolumes []HostPathMount `json:"extraVolumes,omitempty"`
 
@@ -189,23 +209,81 @@ type ControlPlaneComponent struct {
 	// Environment variables passed using ExtraEnvs will override any existing environment variables, or *_proxy environment variables that kubeadm adds by default.
 	// This option takes effect only on Kubernetes >=1.31.0.
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=100
 	ExtraEnvs []EnvVar `json:"extraEnvs,omitempty"`
-}
-
-// APIServer holds settings necessary for API server deployments in the cluster.
-type APIServer struct {
-	ControlPlaneComponent `json:",inline"`
 
 	// certSANs sets extra Subject Alternative Names for the API Server signing cert.
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=100
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:MaxLength=253
 	CertSANs []string `json:"certSANs,omitempty"`
 }
 
+// ControllerManager holds settings necessary for controller-manager deployments in the cluster.
+// +kubebuilder:validation:MinProperties=1
+type ControllerManager struct {
+	// extraArgs is a list of args to pass to the control plane component.
+	// The arg name must match the command line flag name except without leading dash(es).
+	// Extra arguments will override existing default arguments set by kubeadm.
+	// +optional
+	// +listType=map
+	// +listMapKey=name
+	// +listMapKey=value
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=100
+	// +kubebuilder:validation:XValidation:rule="self.all(x, self.exists_one(y, x.name == y.name))",message="extraArgs name must be unique"
+	ExtraArgs []Arg `json:"extraArgs,omitempty"`
+
+	// extraVolumes is an extra set of host volumes, mounted to the control plane component.
+	// +optional
+	// +listType=atomic
+	// +kubebuilder:validation:MaxItems=100
+	ExtraVolumes []HostPathMount `json:"extraVolumes,omitempty"`
+
+	// extraEnvs is an extra set of environment variables to pass to the control plane component.
+	// Environment variables passed using ExtraEnvs will override any existing environment variables, or *_proxy environment variables that kubeadm adds by default.
+	// This option takes effect only on Kubernetes >=1.31.0.
+	// +optional
+	// +listType=atomic
+	// +kubebuilder:validation:MaxItems=100
+	ExtraEnvs []EnvVar `json:"extraEnvs,omitempty"`
+}
+
+// Scheduler holds settings necessary for scheduler deployments in the cluster.
+// +kubebuilder:validation:MinProperties=1
+type Scheduler struct {
+	// extraArgs is a list of args to pass to the control plane component.
+	// The arg name must match the command line flag name except without leading dash(es).
+	// Extra arguments will override existing default arguments set by kubeadm.
+	// +optional
+	// +listType=map
+	// +listMapKey=name
+	// +listMapKey=value
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=100
+	// +kubebuilder:validation:XValidation:rule="self.all(x, self.exists_one(y, x.name == y.name))",message="extraArgs name must be unique"
+	ExtraArgs []Arg `json:"extraArgs,omitempty"`
+
+	// extraVolumes is an extra set of host volumes, mounted to the control plane component.
+	// +optional
+	// +listType=atomic
+	// +kubebuilder:validation:MaxItems=100
+	ExtraVolumes []HostPathMount `json:"extraVolumes,omitempty"`
+
+	// extraEnvs is an extra set of environment variables to pass to the control plane component.
+	// Environment variables passed using ExtraEnvs will override any existing environment variables, or *_proxy environment variables that kubeadm adds by default.
+	// This option takes effect only on Kubernetes >=1.31.0.
+	// +optional
+	// +listType=atomic
+	// +kubebuilder:validation:MaxItems=100
+	ExtraEnvs []EnvVar `json:"extraEnvs,omitempty"`
+}
+
 // DNS defines the DNS addon that should be used in the cluster.
+// +kubebuilder:validation:MinProperties=1
 type DNS struct {
 	// ImageMeta allows to customize the image used for the DNS component
 	ImageMeta `json:",inline"`
@@ -232,6 +310,7 @@ type ImageMeta struct {
 }
 
 // APIEndpoint struct contains elements of API server instance deployed on a node.
+// +kubebuilder:validation:MinProperties=1
 type APIEndpoint struct {
 	// advertiseAddress sets the IP address for the API server to advertise.
 	// +optional
@@ -242,13 +321,14 @@ type APIEndpoint struct {
 	// bindPort sets the secure port for the API Server to bind to.
 	// Defaults to 6443.
 	// +optional
+	// +kubebuilder:validation:Minimum=1
 	BindPort int32 `json:"bindPort,omitempty"`
 }
 
 // NodeRegistrationOptions holds fields that relate to registering a new control-plane or node to the cluster, either via "kubeadm init" or "kubeadm join".
 // Note: The NodeRegistrationOptions struct has to be kept in sync with the structs in MarshalJSON.
+// +kubebuilder:validation:MinProperties=1
 type NodeRegistrationOptions struct {
-
 	// name is the `.Metadata.Name` field of the Node API object that will be created in this `kubeadm init` or `kubeadm join` operation.
 	// This field is also used in the CommonName field of the kubelet's client certificate to the API server.
 	// Defaults to the hostname of the node if not provided.
@@ -267,8 +347,9 @@ type NodeRegistrationOptions struct {
 	// it will be defaulted to []v1.Taint{'node-role.kubernetes.io/master=""'}. If you don't want to taint your control-plane node, set this field to an
 	// empty slice, i.e. `taints: []` in the YAML file. This field is solely used for Node registration.
 	// +optional
+	// +kubebuilder:validation:MinItems=0
 	// +kubebuilder:validation:MaxItems=100
-	Taints []corev1.Taint `json:"taints,omitempty"`
+	Taints *[]corev1.Taint `json:"taints,omitempty"`
 
 	// kubeletExtraArgs is a list of args to pass to kubelet.
 	// The arg name must match the command line flag name except without leading dash(es).
@@ -285,6 +366,7 @@ type NodeRegistrationOptions struct {
 	// ignorePreflightErrors provides a slice of pre-flight errors to be ignored when the current node is registered, e.g. 'IsPrivilegedUser,Swap'.
 	// Value 'all' ignores errors from all checks.
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=50
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:MaxLength=512
@@ -293,8 +375,7 @@ type NodeRegistrationOptions struct {
 	// imagePullPolicy specifies the policy for image pulling
 	// during kubeadm "init" and "join" operations. The value of
 	// this field must be one of "Always", "IfNotPresent" or
-	// "Never". Defaults to "IfNotPresent". This can be used only
-	// with Kubernetes version equal to 1.22 and later.
+	// "Never". Defaults to "IfNotPresent".
 	// +kubebuilder:validation:Enum=Always;IfNotPresent;Never
 	// +optional
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
@@ -306,88 +387,44 @@ type NodeRegistrationOptions struct {
 	ImagePullSerial *bool `json:"imagePullSerial,omitempty"`
 }
 
-// MarshalJSON marshals NodeRegistrationOptions in a way that an empty slice in Taints is preserved.
-// Taints are then rendered as:
-// * nil => omitted from the marshalled JSON
-// * [] => rendered as empty array (`[]`)
-// * [regular-array] => rendered as usual
-// We have to do this as the regular Golang JSON marshalling would just omit
-// the empty slice (xref: https://github.com/golang/go/issues/22480).
-// Note: We can't re-use the original struct as that would lead to an infinite recursion.
-// Note: The structs in this func have to be kept in sync with the NodeRegistrationOptions struct.
-func (n *NodeRegistrationOptions) MarshalJSON() ([]byte, error) {
-	// Marshal an empty Taints slice array without omitempty so it's preserved.
-	if n.Taints != nil && len(n.Taints) == 0 {
-		return json.Marshal(struct {
-			Name                  string            `json:"name,omitempty"`
-			CRISocket             string            `json:"criSocket,omitempty"`
-			Taints                []corev1.Taint    `json:"taints"`
-			KubeletExtraArgs      []Arg             `json:"kubeletExtraArgs,omitempty"`
-			IgnorePreflightErrors []string          `json:"ignorePreflightErrors,omitempty"`
-			ImagePullPolicy       corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
-			ImagePullSerial       *bool             `json:"imagePullSerial,omitempty"`
-		}{
-			Name:                  n.Name,
-			CRISocket:             n.CRISocket,
-			Taints:                n.Taints,
-			KubeletExtraArgs:      n.KubeletExtraArgs,
-			IgnorePreflightErrors: n.IgnorePreflightErrors,
-			ImagePullPolicy:       n.ImagePullPolicy,
-			ImagePullSerial:       n.ImagePullSerial,
-		})
-	}
-
-	// If Taints is nil or not empty we can use omitempty.
-	return json.Marshal(struct {
-		Name                  string            `json:"name,omitempty"`
-		CRISocket             string            `json:"criSocket,omitempty"`
-		Taints                []corev1.Taint    `json:"taints,omitempty"`
-		KubeletExtraArgs      []Arg             `json:"kubeletExtraArgs,omitempty"`
-		IgnorePreflightErrors []string          `json:"ignorePreflightErrors,omitempty"`
-		ImagePullPolicy       corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
-		ImagePullSerial       *bool             `json:"imagePullSerial,omitempty"`
-	}{
-		Name:                  n.Name,
-		CRISocket:             n.CRISocket,
-		Taints:                n.Taints,
-		KubeletExtraArgs:      n.KubeletExtraArgs,
-		IgnorePreflightErrors: n.IgnorePreflightErrors,
-		ImagePullPolicy:       n.ImagePullPolicy,
-		ImagePullSerial:       n.ImagePullSerial,
-	})
-}
-
 // BootstrapToken describes one bootstrap token, stored as a Secret in the cluster.
 type BootstrapToken struct {
 	// token is used for establishing bidirectional trust between nodes and control-planes.
 	// Used for joining nodes in the cluster.
 	// +required
 	Token *BootstrapTokenString `json:"token"`
+
 	// description sets a human-friendly message why this token exists and what it's used
 	// for, so other administrators can know its purpose.
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=512
 	Description string `json:"description,omitempty"`
+
 	// ttlSeconds defines the time to live for this token. Defaults to 24h.
 	// Expires and ttlSeconds are mutually exclusive.
 	// +optional
 	// +kubebuilder:validation:Minimum=0
 	TTLSeconds *int32 `json:"ttlSeconds,omitempty"`
+
 	// expires specifies the timestamp when this token expires. Defaults to being set
 	// dynamically at runtime based on the ttlSeconds. Expires and ttlSeconds are mutually exclusive.
 	// +optional
 	Expires *metav1.Time `json:"expires,omitempty"`
+
 	// usages describes the ways in which this token can be used. Can by default be used
 	// for establishing bidirectional trust, but that can be changed here.
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=100
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:MaxLength=256
 	Usages []string `json:"usages,omitempty"`
+
 	// groups specifies the extra groups that this token will authenticate as when/if
 	// used for authentication
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=100
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:MaxLength=256
@@ -395,8 +432,8 @@ type BootstrapToken struct {
 }
 
 // Etcd contains elements describing Etcd configuration.
+// +kubebuilder:validation:MinProperties=1
 type Etcd struct {
-
 	// local provides configuration knobs for configuring the local etcd instance
 	// Local and External are mutually exclusive
 	// +optional
@@ -436,11 +473,13 @@ type LocalEtcd struct {
 	// Environment variables passed using ExtraEnvs will override any existing environment variables, or *_proxy environment variables that kubeadm adds by default.
 	// This option takes effect only on Kubernetes >=1.31.0.
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=100
 	ExtraEnvs []EnvVar `json:"extraEnvs,omitempty"`
 
 	// serverCertSANs sets extra Subject Alternative Names for the etcd server signing cert.
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=100
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:MaxLength=253
@@ -448,6 +487,7 @@ type LocalEtcd struct {
 
 	// peerCertSANs sets extra Subject Alternative Names for the etcd peer signing cert.
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=100
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:MaxLength=253
@@ -459,6 +499,8 @@ type LocalEtcd struct {
 type ExternalEtcd struct {
 	// endpoints of etcd members. Required for ExternalEtcd.
 	// +required
+	// +listType=atomic
+	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=50
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:MaxLength=512
@@ -492,7 +534,7 @@ type JoinConfiguration struct {
 	// When used in the context of control plane nodes, NodeRegistration should remain consistent
 	// across both InitConfiguration and JoinConfiguration
 	// +optional
-	NodeRegistration NodeRegistrationOptions `json:"nodeRegistration,omitempty"`
+	NodeRegistration NodeRegistrationOptions `json:"nodeRegistration,omitempty,omitzero"`
 
 	// caCertPath is the path to the SSL certificate authority used to
 	// secure communications between node and control-plane.
@@ -506,7 +548,7 @@ type JoinConfiguration struct {
 	// discovery specifies the options for the kubelet to use during the TLS Bootstrap process
 	// +optional
 	// TODO: revisit when there is defaulting from k/k
-	Discovery Discovery `json:"discovery,omitempty"`
+	Discovery Discovery `json:"discovery,omitempty,omitzero"`
 
 	// controlPlane defines the additional control plane instance to be deployed on the joining node.
 	// If nil, no additional control plane instance will be deployed.
@@ -517,6 +559,7 @@ type JoinConfiguration struct {
 	// The list of phases can be obtained with the "kubeadm init --help" command.
 	// This option takes effect only on Kubernetes >=1.22.0.
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=50
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:MaxLength=256
@@ -536,10 +579,11 @@ type JoinConfiguration struct {
 type JoinControlPlane struct {
 	// localAPIEndpoint represents the endpoint of the API server instance to be deployed on this node.
 	// +optional
-	LocalAPIEndpoint APIEndpoint `json:"localAPIEndpoint,omitempty"`
+	LocalAPIEndpoint APIEndpoint `json:"localAPIEndpoint,omitempty,omitzero"`
 }
 
 // Discovery specifies the options for the kubelet to use during the TLS Bootstrap process.
+// +kubebuilder:validation:MinProperties=1
 type Discovery struct {
 	// bootstrapToken is used to set the options for bootstrap token based discovery
 	// BootstrapToken and File are mutually exclusive
@@ -584,6 +628,7 @@ type BootstrapTokenDiscovery struct {
 	// ASN.1. These hashes can be calculated using, for example, OpenSSL:
 	// openssl x509 -pubkey -in ca.crt openssl rsa -pubin -outform der 2>&/dev/null | openssl dgst -sha256 -hex
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=100
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:MaxLength=512
@@ -593,7 +638,7 @@ type BootstrapTokenDiscovery struct {
 	// without CA verification via CACertHashes. This can weaken
 	// the security of kubeadm since other nodes can impersonate the control-plane.
 	// +optional
-	UnsafeSkipCAVerification bool `json:"unsafeSkipCAVerification,omitempty"`
+	UnsafeSkipCAVerification *bool `json:"unsafeSkipCAVerification,omitempty"`
 }
 
 // FileDiscovery is used to specify a file or URL to a kubeconfig file from which to load cluster information.
@@ -651,7 +696,7 @@ type KubeConfigCluster struct {
 
 	// insecureSkipTLSVerify skips the validity check for the server's certificate. This will make your HTTPS connections insecure.
 	// +optional
-	InsecureSkipTLSVerify bool `json:"insecureSkipTLSVerify,omitempty"`
+	InsecureSkipTLSVerify *bool `json:"insecureSkipTLSVerify,omitempty"`
 
 	// certificateAuthorityData contains PEM-encoded certificate authority certificates.
 	//
@@ -721,6 +766,7 @@ type KubeConfigAuthExec struct {
 
 	// args is the arguments to pass to the command when executing it.
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=100
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:MaxLength=512
@@ -730,6 +776,7 @@ type KubeConfigAuthExec struct {
 	// are unioned with the host's environment, as well as variables client-go uses
 	// to pass argument to the plugin.
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=100
 	Env []KubeConfigAuthExecEnv `json:"env,omitempty"`
 
@@ -747,7 +794,7 @@ type KubeConfigAuthExec struct {
 	// to false. Package k8s.io/client-go/tools/auth/exec provides helper methods for
 	// reading this environment variable.
 	// +optional
-	ProvideClusterInfo bool `json:"provideClusterInfo,omitempty"`
+	ProvideClusterInfo *bool `json:"provideClusterInfo,omitempty"`
 }
 
 // KubeConfigAuthExecEnv is used for setting environment variables when executing an exec-based
@@ -786,7 +833,7 @@ type HostPathMount struct {
 	MountPath string `json:"mountPath"`
 	// readOnly controls write access to the volume
 	// +optional
-	ReadOnly bool `json:"readOnly,omitempty"`
+	ReadOnly *bool `json:"readOnly,omitempty"`
 	// pathType is the type of the HostPath.
 	// +optional
 	PathType corev1.HostPathType `json:"pathType,omitempty"`

@@ -19,6 +19,7 @@ package v1beta2
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -64,6 +65,7 @@ type MachineHealthCheckSpec struct {
 	// logical OR, i.e. if any of the conditions is met, the node is unhealthy.
 	//
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=100
 	UnhealthyNodeConditions []UnhealthyNodeCondition `json:"unhealthyNodeConditions,omitempty"`
 
@@ -89,7 +91,7 @@ type MachineHealthCheckSpec struct {
 	// +kubebuilder:validation:Pattern=^\[[0-9]+-[0-9]+\]$
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=32
-	UnhealthyRange *string `json:"unhealthyRange,omitempty"`
+	UnhealthyRange string `json:"unhealthyRange,omitempty"`
 
 	// nodeStartupTimeoutSeconds allows to set the maximum time for MachineHealthCheck
 	// to consider a Machine unhealthy if a corresponding Node isn't associated
@@ -114,7 +116,53 @@ type MachineHealthCheckSpec struct {
 	// creates a new object from the template referenced and hands off remediation of the machine to
 	// a controller that lives outside of Cluster API.
 	// +optional
-	RemediationTemplate *corev1.ObjectReference `json:"remediationTemplate,omitempty"`
+	RemediationTemplate *MachineHealthCheckRemediationTemplateReference `json:"remediationTemplate,omitempty"`
+}
+
+// MachineHealthCheckRemediationTemplateReference is a reference to a remediation template.
+type MachineHealthCheckRemediationTemplateReference struct {
+	// kind of the remediation template.
+	// kind must consist of alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character.
+	// +required
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=63
+	// +kubebuilder:validation:Pattern=`^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$`
+	Kind string `json:"kind"`
+
+	// name of the remediation template.
+	// name must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character.
+	// +required
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=253
+	// +kubebuilder:validation:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	Name string `json:"name"`
+
+	// apiVersion of the remediation template.
+	// apiVersion must be fully qualified domain name followed by / and a version.
+	// NOTE: This field must be kept in sync with the APIVersion of the remediation template.
+	// +required
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=317
+	// +kubebuilder:validation:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/[a-z]([-a-z0-9]*[a-z0-9])?$`
+	APIVersion string `json:"apiVersion"`
+}
+
+// ToObjectReference returns an object reference for the MachineHealthCheckRemediationTemplateReference in a given namespace.
+func (r *MachineHealthCheckRemediationTemplateReference) ToObjectReference(namespace string) *corev1.ObjectReference {
+	if r == nil {
+		return nil
+	}
+	return &corev1.ObjectReference{
+		APIVersion: r.APIVersion,
+		Kind:       r.Kind,
+		Namespace:  namespace,
+		Name:       r.Name,
+	}
+}
+
+// GroupVersionKind gets the GroupVersionKind for a MachineHealthCheckRemediationTemplateReference.
+func (r *MachineHealthCheckRemediationTemplateReference) GroupVersionKind() schema.GroupVersionKind {
+	return schema.FromAPIVersionAndKind(r.APIVersion, r.Kind)
 }
 
 // ANCHOR_END: MachineHealthCHeckSpec
@@ -151,6 +199,7 @@ type UnhealthyNodeCondition struct {
 // ANCHOR: MachineHealthCheckStatus
 
 // MachineHealthCheckStatus defines the observed state of MachineHealthCheck.
+// +kubebuilder:validation:MinProperties=1
 type MachineHealthCheckStatus struct {
 	// conditions represents the observations of a MachineHealthCheck's current state.
 	// Known condition types are RemediationAllowed, Paused.
@@ -163,25 +212,27 @@ type MachineHealthCheckStatus struct {
 	// expectedMachines is the total number of machines counted by this machine health check
 	// +kubebuilder:validation:Minimum=0
 	// +optional
-	ExpectedMachines int32 `json:"expectedMachines"`
+	ExpectedMachines *int32 `json:"expectedMachines,omitempty"`
 
 	// currentHealthy is the total number of healthy machines counted by this machine health check
 	// +kubebuilder:validation:Minimum=0
 	// +optional
-	CurrentHealthy int32 `json:"currentHealthy"`
+	CurrentHealthy *int32 `json:"currentHealthy,omitempty"`
 
 	// remediationsAllowed is the number of further remediations allowed by this machine health check before
 	// maxUnhealthy short circuiting will be applied
 	// +kubebuilder:validation:Minimum=0
 	// +optional
-	RemediationsAllowed int32 `json:"remediationsAllowed"`
+	RemediationsAllowed *int32 `json:"remediationsAllowed,omitempty"`
 
 	// observedGeneration is the latest generation observed by the controller.
 	// +optional
+	// +kubebuilder:validation:Minimum=1
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 
 	// targets shows the current list of machines the machine health check is watching
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=10000
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:MaxLength=253
@@ -232,12 +283,12 @@ type MachineHealthCheck struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// spec is the specification of machine health check policy
-	// +optional
-	Spec MachineHealthCheckSpec `json:"spec,omitempty"`
+	// +required
+	Spec MachineHealthCheckSpec `json:"spec,omitempty,omitzero"`
 
 	// status is the most recently observed status of MachineHealthCheck resource
 	// +optional
-	Status MachineHealthCheckStatus `json:"status,omitempty"`
+	Status MachineHealthCheckStatus `json:"status,omitempty,omitzero"`
 }
 
 // GetV1Beta1Conditions returns the set of conditions for this object.

@@ -28,119 +28,125 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.APIEndpoint":                               schema_cluster_api_api_core_v1beta2_APIEndpoint(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.Bootstrap":                                 schema_cluster_api_api_core_v1beta2_Bootstrap(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.Cluster":                                   schema_cluster_api_api_core_v1beta2_Cluster(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterAvailabilityGate":                   schema_cluster_api_api_core_v1beta2_ClusterAvailabilityGate(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClass":                              schema_cluster_api_api_core_v1beta2_ClusterClass(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassDeprecatedStatus":              schema_cluster_api_api_core_v1beta2_ClusterClassDeprecatedStatus(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassList":                          schema_cluster_api_api_core_v1beta2_ClusterClassList(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassPatch":                         schema_cluster_api_api_core_v1beta2_ClusterClassPatch(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassRef":                           schema_cluster_api_api_core_v1beta2_ClusterClassRef(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassSpec":                          schema_cluster_api_api_core_v1beta2_ClusterClassSpec(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassStatus":                        schema_cluster_api_api_core_v1beta2_ClusterClassStatus(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassStatusVariable":                schema_cluster_api_api_core_v1beta2_ClusterClassStatusVariable(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassStatusVariableDefinition":      schema_cluster_api_api_core_v1beta2_ClusterClassStatusVariableDefinition(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassTemplate":                      schema_cluster_api_api_core_v1beta2_ClusterClassTemplate(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassTemplateReference":             schema_cluster_api_api_core_v1beta2_ClusterClassTemplateReference(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassV1Beta1DeprecatedStatus":       schema_cluster_api_api_core_v1beta2_ClusterClassV1Beta1DeprecatedStatus(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassVariable":                      schema_cluster_api_api_core_v1beta2_ClusterClassVariable(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassVariableMetadata":              schema_cluster_api_api_core_v1beta2_ClusterClassVariableMetadata(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterControlPlaneStatus":                 schema_cluster_api_api_core_v1beta2_ClusterControlPlaneStatus(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterDeprecatedStatus":                   schema_cluster_api_api_core_v1beta2_ClusterDeprecatedStatus(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterInitializationStatus":               schema_cluster_api_api_core_v1beta2_ClusterInitializationStatus(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterList":                               schema_cluster_api_api_core_v1beta2_ClusterList(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterNetwork":                            schema_cluster_api_api_core_v1beta2_ClusterNetwork(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterSpec":                               schema_cluster_api_api_core_v1beta2_ClusterSpec(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterStatus":                             schema_cluster_api_api_core_v1beta2_ClusterStatus(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterV1Beta1DeprecatedStatus":            schema_cluster_api_api_core_v1beta2_ClusterV1Beta1DeprecatedStatus(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterVariable":                           schema_cluster_api_api_core_v1beta2_ClusterVariable(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.Condition":                                 schema_cluster_api_api_core_v1beta2_Condition(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ControlPlaneClass":                         schema_cluster_api_api_core_v1beta2_ControlPlaneClass(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ControlPlaneClassNamingStrategy":           schema_cluster_api_api_core_v1beta2_ControlPlaneClassNamingStrategy(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ControlPlaneTopology":                      schema_cluster_api_api_core_v1beta2_ControlPlaneTopology(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ControlPlaneVariables":                     schema_cluster_api_api_core_v1beta2_ControlPlaneVariables(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ExternalPatchDefinition":                   schema_cluster_api_api_core_v1beta2_ExternalPatchDefinition(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.FailureDomain":                             schema_cluster_api_api_core_v1beta2_FailureDomain(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.InfrastructureClass":                       schema_cluster_api_api_core_v1beta2_InfrastructureClass(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.InfrastructureClassNamingStrategy":         schema_cluster_api_api_core_v1beta2_InfrastructureClassNamingStrategy(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.JSONPatch":                                 schema_cluster_api_api_core_v1beta2_JSONPatch(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.JSONPatchValue":                            schema_cluster_api_api_core_v1beta2_JSONPatchValue(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.JSONSchemaProps":                           schema_cluster_api_api_core_v1beta2_JSONSchemaProps(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.Machine":                                   schema_cluster_api_api_core_v1beta2_Machine(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineAddress":                            schema_cluster_api_api_core_v1beta2_MachineAddress(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeletionStatus":                     schema_cluster_api_api_core_v1beta2_MachineDeletionStatus(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeployment":                         schema_cluster_api_api_core_v1beta2_MachineDeployment(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentClass":                    schema_cluster_api_api_core_v1beta2_MachineDeploymentClass(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentClassNamingStrategy":      schema_cluster_api_api_core_v1beta2_MachineDeploymentClassNamingStrategy(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentClassTemplate":            schema_cluster_api_api_core_v1beta2_MachineDeploymentClassTemplate(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentDeprecatedStatus":         schema_cluster_api_api_core_v1beta2_MachineDeploymentDeprecatedStatus(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentList":                     schema_cluster_api_api_core_v1beta2_MachineDeploymentList(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentSpec":                     schema_cluster_api_api_core_v1beta2_MachineDeploymentSpec(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentStatus":                   schema_cluster_api_api_core_v1beta2_MachineDeploymentStatus(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentStrategy":                 schema_cluster_api_api_core_v1beta2_MachineDeploymentStrategy(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentTopology":                 schema_cluster_api_api_core_v1beta2_MachineDeploymentTopology(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentV1Beta1DeprecatedStatus":  schema_cluster_api_api_core_v1beta2_MachineDeploymentV1Beta1DeprecatedStatus(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentVariables":                schema_cluster_api_api_core_v1beta2_MachineDeploymentVariables(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeprecatedStatus":                   schema_cluster_api_api_core_v1beta2_MachineDeprecatedStatus(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDrainRule":                          schema_cluster_api_api_core_v1beta2_MachineDrainRule(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDrainRuleDrainConfig":               schema_cluster_api_api_core_v1beta2_MachineDrainRuleDrainConfig(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDrainRuleList":                      schema_cluster_api_api_core_v1beta2_MachineDrainRuleList(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDrainRuleMachineSelector":           schema_cluster_api_api_core_v1beta2_MachineDrainRuleMachineSelector(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDrainRulePodSelector":               schema_cluster_api_api_core_v1beta2_MachineDrainRulePodSelector(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDrainRuleSpec":                      schema_cluster_api_api_core_v1beta2_MachineDrainRuleSpec(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineHealthCheck":                        schema_cluster_api_api_core_v1beta2_MachineHealthCheck(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineHealthCheckClass":                   schema_cluster_api_api_core_v1beta2_MachineHealthCheckClass(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineHealthCheckDeprecatedStatus":        schema_cluster_api_api_core_v1beta2_MachineHealthCheckDeprecatedStatus(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineHealthCheckList":                    schema_cluster_api_api_core_v1beta2_MachineHealthCheckList(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineHealthCheckSpec":                    schema_cluster_api_api_core_v1beta2_MachineHealthCheckSpec(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineHealthCheckStatus":                  schema_cluster_api_api_core_v1beta2_MachineHealthCheckStatus(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineHealthCheckTopology":                schema_cluster_api_api_core_v1beta2_MachineHealthCheckTopology(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineHealthCheckV1Beta1DeprecatedStatus": schema_cluster_api_api_core_v1beta2_MachineHealthCheckV1Beta1DeprecatedStatus(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineInitializationStatus":               schema_cluster_api_api_core_v1beta2_MachineInitializationStatus(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineList":                               schema_cluster_api_api_core_v1beta2_MachineList(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineNamingStrategy":                     schema_cluster_api_api_core_v1beta2_MachineNamingStrategy(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineNodeReference":                      schema_cluster_api_api_core_v1beta2_MachineNodeReference(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePool":                               schema_cluster_api_api_core_v1beta2_MachinePool(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolClass":                          schema_cluster_api_api_core_v1beta2_MachinePoolClass(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolClassNamingStrategy":            schema_cluster_api_api_core_v1beta2_MachinePoolClassNamingStrategy(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolClassTemplate":                  schema_cluster_api_api_core_v1beta2_MachinePoolClassTemplate(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolDeprecatedStatus":               schema_cluster_api_api_core_v1beta2_MachinePoolDeprecatedStatus(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolInitializationStatus":           schema_cluster_api_api_core_v1beta2_MachinePoolInitializationStatus(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolList":                           schema_cluster_api_api_core_v1beta2_MachinePoolList(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolSpec":                           schema_cluster_api_api_core_v1beta2_MachinePoolSpec(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolStatus":                         schema_cluster_api_api_core_v1beta2_MachinePoolStatus(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolTopology":                       schema_cluster_api_api_core_v1beta2_MachinePoolTopology(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolV1Beta1DeprecatedStatus":        schema_cluster_api_api_core_v1beta2_MachinePoolV1Beta1DeprecatedStatus(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolVariables":                      schema_cluster_api_api_core_v1beta2_MachinePoolVariables(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineReadinessGate":                      schema_cluster_api_api_core_v1beta2_MachineReadinessGate(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineRollingUpdateDeployment":            schema_cluster_api_api_core_v1beta2_MachineRollingUpdateDeployment(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineSet":                                schema_cluster_api_api_core_v1beta2_MachineSet(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineSetDeprecatedStatus":                schema_cluster_api_api_core_v1beta2_MachineSetDeprecatedStatus(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineSetList":                            schema_cluster_api_api_core_v1beta2_MachineSetList(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineSetSpec":                            schema_cluster_api_api_core_v1beta2_MachineSetSpec(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineSetStatus":                          schema_cluster_api_api_core_v1beta2_MachineSetStatus(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineSetV1Beta1DeprecatedStatus":         schema_cluster_api_api_core_v1beta2_MachineSetV1Beta1DeprecatedStatus(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineSpec":                               schema_cluster_api_api_core_v1beta2_MachineSpec(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineStatus":                             schema_cluster_api_api_core_v1beta2_MachineStatus(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineTemplateSpec":                       schema_cluster_api_api_core_v1beta2_MachineTemplateSpec(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineV1Beta1DeprecatedStatus":            schema_cluster_api_api_core_v1beta2_MachineV1Beta1DeprecatedStatus(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.NetworkRanges":                             schema_cluster_api_api_core_v1beta2_NetworkRanges(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ObjectMeta":                                schema_cluster_api_api_core_v1beta2_ObjectMeta(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.PatchDefinition":                           schema_cluster_api_api_core_v1beta2_PatchDefinition(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.PatchSelector":                             schema_cluster_api_api_core_v1beta2_PatchSelector(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.PatchSelectorMatch":                        schema_cluster_api_api_core_v1beta2_PatchSelectorMatch(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.PatchSelectorMatchMachineDeploymentClass":  schema_cluster_api_api_core_v1beta2_PatchSelectorMatchMachineDeploymentClass(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.PatchSelectorMatchMachinePoolClass":        schema_cluster_api_api_core_v1beta2_PatchSelectorMatchMachinePoolClass(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.RemediationStrategy":                       schema_cluster_api_api_core_v1beta2_RemediationStrategy(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.Topology":                                  schema_cluster_api_api_core_v1beta2_Topology(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.UnhealthyNodeCondition":                    schema_cluster_api_api_core_v1beta2_UnhealthyNodeCondition(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.ValidationRule":                            schema_cluster_api_api_core_v1beta2_ValidationRule(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.VariableSchema":                            schema_cluster_api_api_core_v1beta2_VariableSchema(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.VariableSchemaMetadata":                    schema_cluster_api_api_core_v1beta2_VariableSchemaMetadata(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.WorkersClass":                              schema_cluster_api_api_core_v1beta2_WorkersClass(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.WorkersStatus":                             schema_cluster_api_api_core_v1beta2_WorkersStatus(ref),
-		"sigs.k8s.io/cluster-api/api/core/v1beta2.WorkersTopology":                           schema_cluster_api_api_core_v1beta2_WorkersTopology(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.APIEndpoint":                                    schema_cluster_api_api_core_v1beta2_APIEndpoint(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.Bootstrap":                                      schema_cluster_api_api_core_v1beta2_Bootstrap(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.Cluster":                                        schema_cluster_api_api_core_v1beta2_Cluster(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterAvailabilityGate":                        schema_cluster_api_api_core_v1beta2_ClusterAvailabilityGate(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClass":                                   schema_cluster_api_api_core_v1beta2_ClusterClass(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassDeprecatedStatus":                   schema_cluster_api_api_core_v1beta2_ClusterClassDeprecatedStatus(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassList":                               schema_cluster_api_api_core_v1beta2_ClusterClassList(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassPatch":                              schema_cluster_api_api_core_v1beta2_ClusterClassPatch(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassRef":                                schema_cluster_api_api_core_v1beta2_ClusterClassRef(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassSpec":                               schema_cluster_api_api_core_v1beta2_ClusterClassSpec(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassStatus":                             schema_cluster_api_api_core_v1beta2_ClusterClassStatus(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassStatusVariable":                     schema_cluster_api_api_core_v1beta2_ClusterClassStatusVariable(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassStatusVariableDefinition":           schema_cluster_api_api_core_v1beta2_ClusterClassStatusVariableDefinition(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassTemplateReference":                  schema_cluster_api_api_core_v1beta2_ClusterClassTemplateReference(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassV1Beta1DeprecatedStatus":            schema_cluster_api_api_core_v1beta2_ClusterClassV1Beta1DeprecatedStatus(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassVariable":                           schema_cluster_api_api_core_v1beta2_ClusterClassVariable(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassVariableMetadata":                   schema_cluster_api_api_core_v1beta2_ClusterClassVariableMetadata(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterControlPlaneStatus":                      schema_cluster_api_api_core_v1beta2_ClusterControlPlaneStatus(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterDeprecatedStatus":                        schema_cluster_api_api_core_v1beta2_ClusterDeprecatedStatus(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterInitializationStatus":                    schema_cluster_api_api_core_v1beta2_ClusterInitializationStatus(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterList":                                    schema_cluster_api_api_core_v1beta2_ClusterList(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterNetwork":                                 schema_cluster_api_api_core_v1beta2_ClusterNetwork(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterSpec":                                    schema_cluster_api_api_core_v1beta2_ClusterSpec(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterStatus":                                  schema_cluster_api_api_core_v1beta2_ClusterStatus(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterV1Beta1DeprecatedStatus":                 schema_cluster_api_api_core_v1beta2_ClusterV1Beta1DeprecatedStatus(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterVariable":                                schema_cluster_api_api_core_v1beta2_ClusterVariable(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.Condition":                                      schema_cluster_api_api_core_v1beta2_Condition(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ContractVersionedObjectReference":               schema_cluster_api_api_core_v1beta2_ContractVersionedObjectReference(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ControlPlaneClass":                              schema_cluster_api_api_core_v1beta2_ControlPlaneClass(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ControlPlaneClassMachineInfrastructureTemplate": schema_cluster_api_api_core_v1beta2_ControlPlaneClassMachineInfrastructureTemplate(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ControlPlaneClassNamingStrategy":                schema_cluster_api_api_core_v1beta2_ControlPlaneClassNamingStrategy(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ControlPlaneTopology":                           schema_cluster_api_api_core_v1beta2_ControlPlaneTopology(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ControlPlaneVariables":                          schema_cluster_api_api_core_v1beta2_ControlPlaneVariables(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ExternalPatchDefinition":                        schema_cluster_api_api_core_v1beta2_ExternalPatchDefinition(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.FailureDomain":                                  schema_cluster_api_api_core_v1beta2_FailureDomain(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.InfrastructureClass":                            schema_cluster_api_api_core_v1beta2_InfrastructureClass(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.InfrastructureClassNamingStrategy":              schema_cluster_api_api_core_v1beta2_InfrastructureClassNamingStrategy(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.JSONPatch":                                      schema_cluster_api_api_core_v1beta2_JSONPatch(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.JSONPatchValue":                                 schema_cluster_api_api_core_v1beta2_JSONPatchValue(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.JSONSchemaProps":                                schema_cluster_api_api_core_v1beta2_JSONSchemaProps(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.Machine":                                        schema_cluster_api_api_core_v1beta2_Machine(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineAddress":                                 schema_cluster_api_api_core_v1beta2_MachineAddress(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeletionStatus":                          schema_cluster_api_api_core_v1beta2_MachineDeletionStatus(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeployment":                              schema_cluster_api_api_core_v1beta2_MachineDeployment(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentClass":                         schema_cluster_api_api_core_v1beta2_MachineDeploymentClass(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentClassBootstrapTemplate":        schema_cluster_api_api_core_v1beta2_MachineDeploymentClassBootstrapTemplate(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentClassInfrastructureTemplate":   schema_cluster_api_api_core_v1beta2_MachineDeploymentClassInfrastructureTemplate(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentClassNamingStrategy":           schema_cluster_api_api_core_v1beta2_MachineDeploymentClassNamingStrategy(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentClassTemplate":                 schema_cluster_api_api_core_v1beta2_MachineDeploymentClassTemplate(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentDeprecatedStatus":              schema_cluster_api_api_core_v1beta2_MachineDeploymentDeprecatedStatus(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentList":                          schema_cluster_api_api_core_v1beta2_MachineDeploymentList(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentSpec":                          schema_cluster_api_api_core_v1beta2_MachineDeploymentSpec(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentStatus":                        schema_cluster_api_api_core_v1beta2_MachineDeploymentStatus(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentStrategy":                      schema_cluster_api_api_core_v1beta2_MachineDeploymentStrategy(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentTopology":                      schema_cluster_api_api_core_v1beta2_MachineDeploymentTopology(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentV1Beta1DeprecatedStatus":       schema_cluster_api_api_core_v1beta2_MachineDeploymentV1Beta1DeprecatedStatus(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentVariables":                     schema_cluster_api_api_core_v1beta2_MachineDeploymentVariables(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeprecatedStatus":                        schema_cluster_api_api_core_v1beta2_MachineDeprecatedStatus(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDrainRule":                               schema_cluster_api_api_core_v1beta2_MachineDrainRule(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDrainRuleDrainConfig":                    schema_cluster_api_api_core_v1beta2_MachineDrainRuleDrainConfig(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDrainRuleList":                           schema_cluster_api_api_core_v1beta2_MachineDrainRuleList(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDrainRuleMachineSelector":                schema_cluster_api_api_core_v1beta2_MachineDrainRuleMachineSelector(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDrainRulePodSelector":                    schema_cluster_api_api_core_v1beta2_MachineDrainRulePodSelector(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDrainRuleSpec":                           schema_cluster_api_api_core_v1beta2_MachineDrainRuleSpec(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineHealthCheck":                             schema_cluster_api_api_core_v1beta2_MachineHealthCheck(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineHealthCheckClass":                        schema_cluster_api_api_core_v1beta2_MachineHealthCheckClass(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineHealthCheckDeprecatedStatus":             schema_cluster_api_api_core_v1beta2_MachineHealthCheckDeprecatedStatus(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineHealthCheckList":                         schema_cluster_api_api_core_v1beta2_MachineHealthCheckList(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineHealthCheckRemediationTemplateReference": schema_cluster_api_api_core_v1beta2_MachineHealthCheckRemediationTemplateReference(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineHealthCheckSpec":                         schema_cluster_api_api_core_v1beta2_MachineHealthCheckSpec(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineHealthCheckStatus":                       schema_cluster_api_api_core_v1beta2_MachineHealthCheckStatus(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineHealthCheckTopology":                     schema_cluster_api_api_core_v1beta2_MachineHealthCheckTopology(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineHealthCheckV1Beta1DeprecatedStatus":      schema_cluster_api_api_core_v1beta2_MachineHealthCheckV1Beta1DeprecatedStatus(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineInitializationStatus":                    schema_cluster_api_api_core_v1beta2_MachineInitializationStatus(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineList":                                    schema_cluster_api_api_core_v1beta2_MachineList(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineNamingStrategy":                          schema_cluster_api_api_core_v1beta2_MachineNamingStrategy(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineNodeReference":                           schema_cluster_api_api_core_v1beta2_MachineNodeReference(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePool":                                    schema_cluster_api_api_core_v1beta2_MachinePool(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolClass":                               schema_cluster_api_api_core_v1beta2_MachinePoolClass(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolClassBootstrapTemplate":              schema_cluster_api_api_core_v1beta2_MachinePoolClassBootstrapTemplate(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolClassInfrastructureTemplate":         schema_cluster_api_api_core_v1beta2_MachinePoolClassInfrastructureTemplate(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolClassNamingStrategy":                 schema_cluster_api_api_core_v1beta2_MachinePoolClassNamingStrategy(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolClassTemplate":                       schema_cluster_api_api_core_v1beta2_MachinePoolClassTemplate(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolDeprecatedStatus":                    schema_cluster_api_api_core_v1beta2_MachinePoolDeprecatedStatus(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolInitializationStatus":                schema_cluster_api_api_core_v1beta2_MachinePoolInitializationStatus(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolList":                                schema_cluster_api_api_core_v1beta2_MachinePoolList(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolSpec":                                schema_cluster_api_api_core_v1beta2_MachinePoolSpec(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolStatus":                              schema_cluster_api_api_core_v1beta2_MachinePoolStatus(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolTopology":                            schema_cluster_api_api_core_v1beta2_MachinePoolTopology(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolV1Beta1DeprecatedStatus":             schema_cluster_api_api_core_v1beta2_MachinePoolV1Beta1DeprecatedStatus(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolVariables":                           schema_cluster_api_api_core_v1beta2_MachinePoolVariables(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineReadinessGate":                           schema_cluster_api_api_core_v1beta2_MachineReadinessGate(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineRollingUpdateDeployment":                 schema_cluster_api_api_core_v1beta2_MachineRollingUpdateDeployment(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineSet":                                     schema_cluster_api_api_core_v1beta2_MachineSet(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineSetDeprecatedStatus":                     schema_cluster_api_api_core_v1beta2_MachineSetDeprecatedStatus(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineSetList":                                 schema_cluster_api_api_core_v1beta2_MachineSetList(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineSetSpec":                                 schema_cluster_api_api_core_v1beta2_MachineSetSpec(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineSetStatus":                               schema_cluster_api_api_core_v1beta2_MachineSetStatus(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineSetV1Beta1DeprecatedStatus":              schema_cluster_api_api_core_v1beta2_MachineSetV1Beta1DeprecatedStatus(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineSpec":                                    schema_cluster_api_api_core_v1beta2_MachineSpec(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineStatus":                                  schema_cluster_api_api_core_v1beta2_MachineStatus(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineTemplateSpec":                            schema_cluster_api_api_core_v1beta2_MachineTemplateSpec(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineV1Beta1DeprecatedStatus":                 schema_cluster_api_api_core_v1beta2_MachineV1Beta1DeprecatedStatus(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.NetworkRanges":                                  schema_cluster_api_api_core_v1beta2_NetworkRanges(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ObjectMeta":                                     schema_cluster_api_api_core_v1beta2_ObjectMeta(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.PatchDefinition":                                schema_cluster_api_api_core_v1beta2_PatchDefinition(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.PatchSelector":                                  schema_cluster_api_api_core_v1beta2_PatchSelector(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.PatchSelectorMatch":                             schema_cluster_api_api_core_v1beta2_PatchSelectorMatch(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.PatchSelectorMatchMachineDeploymentClass":       schema_cluster_api_api_core_v1beta2_PatchSelectorMatchMachineDeploymentClass(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.PatchSelectorMatchMachinePoolClass":             schema_cluster_api_api_core_v1beta2_PatchSelectorMatchMachinePoolClass(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.RemediationStrategy":                            schema_cluster_api_api_core_v1beta2_RemediationStrategy(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.Topology":                                       schema_cluster_api_api_core_v1beta2_Topology(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.UnhealthyNodeCondition":                         schema_cluster_api_api_core_v1beta2_UnhealthyNodeCondition(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.ValidationRule":                                 schema_cluster_api_api_core_v1beta2_ValidationRule(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.VariableSchema":                                 schema_cluster_api_api_core_v1beta2_VariableSchema(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.VariableSchemaMetadata":                         schema_cluster_api_api_core_v1beta2_VariableSchemaMetadata(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.WorkersClass":                                   schema_cluster_api_api_core_v1beta2_WorkersClass(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.WorkersStatus":                                  schema_cluster_api_api_core_v1beta2_WorkersStatus(ref),
+		"sigs.k8s.io/cluster-api/api/core/v1beta2.WorkersTopology":                                schema_cluster_api_api_core_v1beta2_WorkersTopology(ref),
 	}
 }
 
@@ -154,7 +160,6 @@ func schema_cluster_api_api_core_v1beta2_APIEndpoint(ref common.ReferenceCallbac
 					"host": {
 						SchemaProps: spec.SchemaProps{
 							Description: "host is the hostname on which the API server is serving.",
-							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -162,13 +167,11 @@ func schema_cluster_api_api_core_v1beta2_APIEndpoint(ref common.ReferenceCallbac
 					"port": {
 						SchemaProps: spec.SchemaProps{
 							Description: "port is the port on which the API server is serving.",
-							Default:     0,
 							Type:        []string{"integer"},
 							Format:      "int32",
 						},
 					},
 				},
-				Required: []string{"host", "port"},
 			},
 		},
 	}
@@ -184,7 +187,7 @@ func schema_cluster_api_api_core_v1beta2_Bootstrap(ref common.ReferenceCallback)
 					"configRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "configRef is a reference to a bootstrap provider-specific resource that holds configuration details. The reference is optional to allow users/operators to specify Bootstrap.DataSecretName without the need of a controller.",
-							Ref:         ref("k8s.io/api/core/v1.ObjectReference"),
+							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.ContractVersionedObjectReference"),
 						},
 					},
 					"dataSecretName": {
@@ -198,7 +201,7 @@ func schema_cluster_api_api_core_v1beta2_Bootstrap(ref common.ReferenceCallback)
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.ObjectReference"},
+			"sigs.k8s.io/cluster-api/api/core/v1beta2.ContractVersionedObjectReference"},
 	}
 }
 
@@ -245,6 +248,7 @@ func schema_cluster_api_api_core_v1beta2_Cluster(ref common.ReferenceCallback) c
 						},
 					},
 				},
+				Required: []string{"spec"},
 			},
 		},
 		Dependencies: []string{
@@ -324,6 +328,7 @@ func schema_cluster_api_api_core_v1beta2_ClusterClass(ref common.ReferenceCallba
 						},
 					},
 				},
+				Required: []string{"spec"},
 			},
 		},
 		Dependencies: []string{
@@ -433,6 +438,11 @@ func schema_cluster_api_api_core_v1beta2_ClusterClassPatch(ref common.ReferenceC
 						},
 					},
 					"definitions": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
 						SchemaProps: spec.SchemaProps{
 							Description: "definitions define inline patches. Note: Patches will be applied in the order of the array. Note: Exactly one of Definitions or External must be set.",
 							Type:        []string{"array"},
@@ -541,6 +551,11 @@ func schema_cluster_api_api_core_v1beta2_ClusterClassSpec(ref common.ReferenceCa
 						},
 					},
 					"variables": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
 						SchemaProps: spec.SchemaProps{
 							Description: "variables defines the variables which can be configured in the Cluster topology and are then used in patches.",
 							Type:        []string{"array"},
@@ -555,6 +570,11 @@ func schema_cluster_api_api_core_v1beta2_ClusterClassSpec(ref common.ReferenceCa
 						},
 					},
 					"patches": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
 						SchemaProps: spec.SchemaProps{
 							Description: "patches defines the patches which are applied to customize referenced templates of a ClusterClass. Note: Patches will be applied in the order of the array.",
 							Type:        []string{"array"},
@@ -569,6 +589,7 @@ func schema_cluster_api_api_core_v1beta2_ClusterClassSpec(ref common.ReferenceCa
 						},
 					},
 				},
+				Required: []string{"infrastructure", "controlPlane"},
 			},
 		},
 		Dependencies: []string{
@@ -606,6 +627,11 @@ func schema_cluster_api_api_core_v1beta2_ClusterClassStatus(ref common.Reference
 						},
 					},
 					"variables": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
 						SchemaProps: spec.SchemaProps{
 							Description: "variables is a list of ClusterClassStatusVariable that are defined for the ClusterClass.",
 							Type:        []string{"array"},
@@ -658,12 +684,16 @@ func schema_cluster_api_api_core_v1beta2_ClusterClassStatusVariable(ref common.R
 					"definitionsConflict": {
 						SchemaProps: spec.SchemaProps{
 							Description: "definitionsConflict specifies whether or not there are conflicting definitions for a single variable name.",
-							Default:     false,
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
 					},
 					"definitions": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
 						SchemaProps: spec.SchemaProps{
 							Description: "definitions is a list of definitions for a variable.",
 							Type:        []string{"array"},
@@ -729,28 +759,6 @@ func schema_cluster_api_api_core_v1beta2_ClusterClassStatusVariableDefinition(re
 		},
 		Dependencies: []string{
 			"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassVariableMetadata", "sigs.k8s.io/cluster-api/api/core/v1beta2.VariableSchema"},
-	}
-}
-
-func schema_cluster_api_api_core_v1beta2_ClusterClassTemplate(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "ClusterClassTemplate defines a template referenced by a ClusterClass.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"ref": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ref is a required reference to a custom resource offered by a provider.",
-							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassTemplateReference"),
-						},
-					},
-				},
-				Required: []string{"ref"},
-			},
-		},
-		Dependencies: []string{
-			"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassTemplateReference"},
 	}
 }
 
@@ -985,13 +993,12 @@ func schema_cluster_api_api_core_v1beta2_ClusterInitializationStatus(ref common.
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "ClusterInitializationStatus provides observations of the Cluster initialization process.",
+				Description: "ClusterInitializationStatus provides observations of the Cluster initialization process. NOTE: Fields in this struct are part of the Cluster API contract and are used to orchestrate initial Cluster provisioning.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"infrastructureProvisioned": {
 						SchemaProps: spec.SchemaProps{
 							Description: "infrastructureProvisioned is true when the infrastructure provider reports that Cluster's infrastructure is fully provisioned. NOTE: this field is part of the Cluster API contract, and it is used to orchestrate provisioning. The value of this field is never updated after provisioning is completed.",
-							Default:     false,
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
@@ -999,7 +1006,6 @@ func schema_cluster_api_api_core_v1beta2_ClusterInitializationStatus(ref common.
 					"controlPlaneInitialized": {
 						SchemaProps: spec.SchemaProps{
 							Description: "controlPlaneInitialized denotes when the control plane is functional enough to accept requests. This information is usually used as a signal for starting all the provisioning operations that depends on a functional API server, but do not require a full HA control plane to exists, like e.g. join worker Machines, install core addons like CNI, CPI, CSI etc. NOTE: this field is part of the Cluster API contract, and it is used to orchestrate provisioning. The value of this field is never updated after initialization is completed.",
-							Default:     false,
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
@@ -1132,13 +1138,13 @@ func schema_cluster_api_api_core_v1beta2_ClusterSpec(ref common.ReferenceCallbac
 					"controlPlaneRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "controlPlaneRef is an optional reference to a provider-specific resource that holds the details for provisioning the Control Plane for a Cluster.",
-							Ref:         ref("k8s.io/api/core/v1.ObjectReference"),
+							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.ContractVersionedObjectReference"),
 						},
 					},
 					"infrastructureRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "infrastructureRef is a reference to a provider-specific resource that holds the details for provisioning infrastructure for a cluster in said provider.",
-							Ref:         ref("k8s.io/api/core/v1.ObjectReference"),
+							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.ContractVersionedObjectReference"),
 						},
 					},
 					"topology": {
@@ -1173,7 +1179,7 @@ func schema_cluster_api_api_core_v1beta2_ClusterSpec(ref common.ReferenceCallbac
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.ObjectReference", "sigs.k8s.io/cluster-api/api/core/v1beta2.APIEndpoint", "sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterAvailabilityGate", "sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterNetwork", "sigs.k8s.io/cluster-api/api/core/v1beta2.Topology"},
+			"sigs.k8s.io/cluster-api/api/core/v1beta2.APIEndpoint", "sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterAvailabilityGate", "sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterNetwork", "sigs.k8s.io/cluster-api/api/core/v1beta2.ContractVersionedObjectReference", "sigs.k8s.io/cluster-api/api/core/v1beta2.Topology"},
 	}
 }
 
@@ -1209,6 +1215,7 @@ func schema_cluster_api_api_core_v1beta2_ClusterStatus(ref common.ReferenceCallb
 					"initialization": {
 						SchemaProps: spec.SchemaProps{
 							Description: "initialization provides observations of the Cluster initialization process. NOTE: Fields in this struct are part of the Cluster API contract and are used to orchestrate initial Cluster provisioning.",
+							Default:     map[string]interface{}{},
 							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterInitializationStatus"),
 						},
 					},
@@ -1406,6 +1413,44 @@ func schema_cluster_api_api_core_v1beta2_Condition(ref common.ReferenceCallback)
 	}
 }
 
+func schema_cluster_api_api_core_v1beta2_ContractVersionedObjectReference(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ContractVersionedObjectReference is a reference to a resource for which the version is inferred from contract labels.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "kind of the resource being referenced. kind must consist of alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "name of the resource being referenced. name must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiGroup": {
+						SchemaProps: spec.SchemaProps{
+							Description: "apiGroup is the group of the resource being referenced. apiGroup must be fully qualified domain name. The corresponding version for this reference will be looked up from the contract labels of the corresponding CRD of the resource being referenced.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"kind", "name", "apiGroup"},
+			},
+		},
+	}
+}
+
 func schema_cluster_api_api_core_v1beta2_ControlPlaneClass(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1420,16 +1465,17 @@ func schema_cluster_api_api_core_v1beta2_ControlPlaneClass(ref common.ReferenceC
 							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.ObjectMeta"),
 						},
 					},
-					"ref": {
+					"templateRef": {
 						SchemaProps: spec.SchemaProps{
-							Description: "ref is a required reference to a custom resource offered by a provider.",
+							Description: "templateRef contains the reference to a provider-specific control plane template.",
+							Default:     map[string]interface{}{},
 							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassTemplateReference"),
 						},
 					},
 					"machineInfrastructure": {
 						SchemaProps: spec.SchemaProps{
 							Description: "machineInfrastructure defines the metadata and infrastructure information for control plane machines.\n\nThis field is supported if and only if the control plane provider template referenced above is Machine based and supports setting replicas.",
-							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassTemplate"),
+							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.ControlPlaneClassMachineInfrastructureTemplate"),
 						},
 					},
 					"machineHealthCheck": {
@@ -1475,7 +1521,7 @@ func schema_cluster_api_api_core_v1beta2_ControlPlaneClass(ref common.ReferenceC
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "readinessGates specifies additional conditions to include when evaluating Machine Ready condition.\n\nThis field can be used e.g. to instruct the machine controller to include in the computation for Machine's ready computation a condition, managed by an external controllers, reporting the status of special software/hardware installed on the Machine.\n\nNOTE: This field is considered only for computing v1beta2 conditions. NOTE: If a Cluster defines a custom list of readinessGates for the control plane, such list overrides readinessGates defined in this field. NOTE: Specific control plane provider implementations might automatically extend the list of readinessGates; e.g. the kubeadm control provider adds ReadinessGates for the APIServerPodHealthy, SchedulerPodHealthy conditions, etc.",
+							Description: "readinessGates specifies additional conditions to include when evaluating Machine Ready condition.\n\nThis field can be used e.g. to instruct the machine controller to include in the computation for Machine's ready computation a condition, managed by an external controllers, reporting the status of special software/hardware installed on the Machine.\n\nNOTE: If a Cluster defines a custom list of readinessGates for the control plane, such list overrides readinessGates defined in this field. NOTE: Specific control plane provider implementations might automatically extend the list of readinessGates; e.g. the kubeadm control provider adds ReadinessGates for the APIServerPodHealthy, SchedulerPodHealthy conditions, etc.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -1488,11 +1534,34 @@ func schema_cluster_api_api_core_v1beta2_ControlPlaneClass(ref common.ReferenceC
 						},
 					},
 				},
-				Required: []string{"ref"},
+				Required: []string{"templateRef"},
 			},
 		},
 		Dependencies: []string{
-			"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassTemplate", "sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassTemplateReference", "sigs.k8s.io/cluster-api/api/core/v1beta2.ControlPlaneClassNamingStrategy", "sigs.k8s.io/cluster-api/api/core/v1beta2.MachineHealthCheckClass", "sigs.k8s.io/cluster-api/api/core/v1beta2.MachineReadinessGate", "sigs.k8s.io/cluster-api/api/core/v1beta2.ObjectMeta"},
+			"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassTemplateReference", "sigs.k8s.io/cluster-api/api/core/v1beta2.ControlPlaneClassMachineInfrastructureTemplate", "sigs.k8s.io/cluster-api/api/core/v1beta2.ControlPlaneClassNamingStrategy", "sigs.k8s.io/cluster-api/api/core/v1beta2.MachineHealthCheckClass", "sigs.k8s.io/cluster-api/api/core/v1beta2.MachineReadinessGate", "sigs.k8s.io/cluster-api/api/core/v1beta2.ObjectMeta"},
+	}
+}
+
+func schema_cluster_api_api_core_v1beta2_ControlPlaneClassMachineInfrastructureTemplate(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ControlPlaneClassMachineInfrastructureTemplate defines the template for a MachineInfrastructure of a ControlPlane.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"templateRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "templateRef is a required reference to the template for a MachineInfrastructure of a ControlPlane.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassTemplateReference"),
+						},
+					},
+				},
+				Required: []string{"templateRef"},
+			},
+		},
+		Dependencies: []string{
+			"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassTemplateReference"},
 	}
 }
 
@@ -1574,7 +1643,7 @@ func schema_cluster_api_api_core_v1beta2_ControlPlaneTopology(ref common.Referen
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "readinessGates specifies additional conditions to include when evaluating Machine Ready condition.\n\nThis field can be used e.g. to instruct the machine controller to include in the computation for Machine's ready computation a condition, managed by an external controllers, reporting the status of special software/hardware installed on the Machine.\n\nIf this field is not defined, readinessGates from the corresponding ControlPlaneClass will be used, if any.\n\nNOTE: This field is considered only for computing v1beta2 conditions. NOTE: Specific control plane provider implementations might automatically extend the list of readinessGates; e.g. the kubeadm control provider adds ReadinessGates for the APIServerPodHealthy, SchedulerPodHealthy conditions, etc.",
+							Description: "readinessGates specifies additional conditions to include when evaluating Machine Ready condition.\n\nThis field can be used e.g. to instruct the machine controller to include in the computation for Machine's ready computation a condition, managed by an external controllers, reporting the status of special software/hardware installed on the Machine.\n\nIf this field is not defined, readinessGates from the corresponding ControlPlaneClass will be used, if any.\n\nNOTE: Specific control plane provider implementations might automatically extend the list of readinessGates; e.g. the kubeadm control provider adds ReadinessGates for the APIServerPodHealthy, SchedulerPodHealthy conditions, etc.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -1739,9 +1808,10 @@ func schema_cluster_api_api_core_v1beta2_InfrastructureClass(ref common.Referenc
 				Description: "InfrastructureClass defines the class for the infrastructure cluster.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"ref": {
+					"templateRef": {
 						SchemaProps: spec.SchemaProps{
-							Description: "ref is a required reference to a custom resource offered by a provider.",
+							Description: "templateRef contains the reference to a provider-specific infrastructure cluster template.",
+							Default:     map[string]interface{}{},
 							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassTemplateReference"),
 						},
 					},
@@ -1752,7 +1822,7 @@ func schema_cluster_api_api_core_v1beta2_InfrastructureClass(ref common.Referenc
 						},
 					},
 				},
-				Required: []string{"ref"},
+				Required: []string{"templateRef"},
 			},
 		},
 		Dependencies: []string{
@@ -1914,6 +1984,11 @@ func schema_cluster_api_api_core_v1beta2_JSONSchemaProps(ref common.ReferenceCal
 						},
 					},
 					"required": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
 						SchemaProps: spec.SchemaProps{
 							Description: "required specifies which fields of an object are required. NOTE: Can only be set if type is object.",
 							Type:        []string{"array"},
@@ -2019,6 +2094,11 @@ func schema_cluster_api_api_core_v1beta2_JSONSchemaProps(ref common.ReferenceCal
 						},
 					},
 					"enum": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
 						SchemaProps: spec.SchemaProps{
 							Description: "enum is the list of valid values of the variable. NOTE: Can be set for all types.",
 							Type:        []string{"array"},
@@ -2171,6 +2251,7 @@ func schema_cluster_api_api_core_v1beta2_Machine(ref common.ReferenceCallback) c
 						},
 					},
 				},
+				Required: []string{"spec"},
 			},
 		},
 		Dependencies: []string{
@@ -2278,6 +2359,7 @@ func schema_cluster_api_api_core_v1beta2_MachineDeployment(ref common.ReferenceC
 						},
 					},
 				},
+				Required: []string{"spec"},
 			},
 		},
 		Dependencies: []string{
@@ -2364,7 +2446,7 @@ func schema_cluster_api_api_core_v1beta2_MachineDeploymentClass(ref common.Refer
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "readinessGates specifies additional conditions to include when evaluating Machine Ready condition.\n\nThis field can be used e.g. to instruct the machine controller to include in the computation for Machine's ready computation a condition, managed by an external controllers, reporting the status of special software/hardware installed on the Machine.\n\nNOTE: This field is considered only for computing v1beta2 conditions. NOTE: If a Cluster defines a custom list of readinessGates for a MachineDeployment using this MachineDeploymentClass, such list overrides readinessGates defined in this field.",
+							Description: "readinessGates specifies additional conditions to include when evaluating Machine Ready condition.\n\nThis field can be used e.g. to instruct the machine controller to include in the computation for Machine's ready computation a condition, managed by an external controllers, reporting the status of special software/hardware installed on the Machine.\n\nNOTE: If a Cluster defines a custom list of readinessGates for a MachineDeployment using this MachineDeploymentClass, such list overrides readinessGates defined in this field.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -2388,6 +2470,52 @@ func schema_cluster_api_api_core_v1beta2_MachineDeploymentClass(ref common.Refer
 		},
 		Dependencies: []string{
 			"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentClassNamingStrategy", "sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentClassTemplate", "sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentStrategy", "sigs.k8s.io/cluster-api/api/core/v1beta2.MachineHealthCheckClass", "sigs.k8s.io/cluster-api/api/core/v1beta2.MachineReadinessGate"},
+	}
+}
+
+func schema_cluster_api_api_core_v1beta2_MachineDeploymentClassBootstrapTemplate(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "MachineDeploymentClassBootstrapTemplate defines the BootstrapTemplate for a MachineDeployment.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"templateRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "templateRef is a required reference to the BootstrapTemplate for a MachineDeployment.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassTemplateReference"),
+						},
+					},
+				},
+				Required: []string{"templateRef"},
+			},
+		},
+		Dependencies: []string{
+			"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassTemplateReference"},
+	}
+}
+
+func schema_cluster_api_api_core_v1beta2_MachineDeploymentClassInfrastructureTemplate(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "MachineDeploymentClassInfrastructureTemplate defines the InfrastructureTemplate for a MachineDeployment.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"templateRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "templateRef is a required reference to the InfrastructureTemplate for a MachineDeployment.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassTemplateReference"),
+						},
+					},
+				},
+				Required: []string{"templateRef"},
+			},
+		},
+		Dependencies: []string{
+			"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassTemplateReference"},
 	}
 }
 
@@ -2429,14 +2557,14 @@ func schema_cluster_api_api_core_v1beta2_MachineDeploymentClassTemplate(ref comm
 						SchemaProps: spec.SchemaProps{
 							Description: "bootstrap contains the bootstrap template reference to be used for the creation of worker Machines.",
 							Default:     map[string]interface{}{},
-							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassTemplate"),
+							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentClassBootstrapTemplate"),
 						},
 					},
 					"infrastructure": {
 						SchemaProps: spec.SchemaProps{
 							Description: "infrastructure contains the infrastructure template reference to be used for the creation of worker Machines.",
 							Default:     map[string]interface{}{},
-							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassTemplate"),
+							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentClassInfrastructureTemplate"),
 						},
 					},
 				},
@@ -2444,7 +2572,7 @@ func schema_cluster_api_api_core_v1beta2_MachineDeploymentClassTemplate(ref comm
 			},
 		},
 		Dependencies: []string{
-			"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassTemplate", "sigs.k8s.io/cluster-api/api/core/v1beta2.ObjectMeta"},
+			"sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentClassBootstrapTemplate", "sigs.k8s.io/cluster-api/api/core/v1beta2.MachineDeploymentClassInfrastructureTemplate", "sigs.k8s.io/cluster-api/api/core/v1beta2.ObjectMeta"},
 	}
 }
 
@@ -2804,7 +2932,7 @@ func schema_cluster_api_api_core_v1beta2_MachineDeploymentTopology(ref common.Re
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "readinessGates specifies additional conditions to include when evaluating Machine Ready condition.\n\nThis field can be used e.g. to instruct the machine controller to include in the computation for Machine's ready computation a condition, managed by an external controllers, reporting the status of special software/hardware installed on the Machine.\n\nIf this field is not defined, readinessGates from the corresponding MachineDeploymentClass will be used, if any.\n\nNOTE: This field is considered only for computing v1beta2 conditions.",
+							Description: "readinessGates specifies additional conditions to include when evaluating Machine Ready condition.\n\nThis field can be used e.g. to instruct the machine controller to include in the computation for Machine's ready computation a condition, managed by an external controllers, reporting the status of special software/hardware installed on the Machine.\n\nIf this field is not defined, readinessGates from the corresponding MachineDeploymentClass will be used, if any.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -3238,6 +3366,7 @@ func schema_cluster_api_api_core_v1beta2_MachineHealthCheck(ref common.Reference
 						},
 					},
 				},
+				Required: []string{"spec"},
 			},
 		},
 		Dependencies: []string{
@@ -3253,6 +3382,11 @@ func schema_cluster_api_api_core_v1beta2_MachineHealthCheckClass(ref common.Refe
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"unhealthyNodeConditions": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
 						SchemaProps: spec.SchemaProps{
 							Description: "unhealthyNodeConditions contains a list of conditions that determine whether a node is considered unhealthy. The conditions are combined in a logical OR, i.e. if any of the conditions is met, the node is unhealthy.",
 							Type:        []string{"array"},
@@ -3289,14 +3423,14 @@ func schema_cluster_api_api_core_v1beta2_MachineHealthCheckClass(ref common.Refe
 					"remediationTemplate": {
 						SchemaProps: spec.SchemaProps{
 							Description: "remediationTemplate is a reference to a remediation template provided by an infrastructure provider.\n\nThis field is completely optional, when filled, the MachineHealthCheck controller creates a new object from the template referenced and hands off remediation of the machine to a controller that lives outside of Cluster API.",
-							Ref:         ref("k8s.io/api/core/v1.ObjectReference"),
+							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.MachineHealthCheckRemediationTemplateReference"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.ObjectReference", "k8s.io/apimachinery/pkg/util/intstr.IntOrString", "sigs.k8s.io/cluster-api/api/core/v1beta2.UnhealthyNodeCondition"},
+			"k8s.io/apimachinery/pkg/util/intstr.IntOrString", "sigs.k8s.io/cluster-api/api/core/v1beta2.MachineHealthCheckRemediationTemplateReference", "sigs.k8s.io/cluster-api/api/core/v1beta2.UnhealthyNodeCondition"},
 	}
 }
 
@@ -3372,6 +3506,44 @@ func schema_cluster_api_api_core_v1beta2_MachineHealthCheckList(ref common.Refer
 	}
 }
 
+func schema_cluster_api_api_core_v1beta2_MachineHealthCheckRemediationTemplateReference(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "MachineHealthCheckRemediationTemplateReference is a reference to a remediation template.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "kind of the remediation template. kind must consist of alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "name of the remediation template. name must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "apiVersion of the remediation template. apiVersion must be fully qualified domain name followed by / and a version. NOTE: This field must be kept in sync with the APIVersion of the remediation template.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"kind", "name", "apiVersion"},
+			},
+		},
+	}
+}
+
 func schema_cluster_api_api_core_v1beta2_MachineHealthCheckSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -3395,6 +3567,11 @@ func schema_cluster_api_api_core_v1beta2_MachineHealthCheckSpec(ref common.Refer
 						},
 					},
 					"unhealthyNodeConditions": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
 						SchemaProps: spec.SchemaProps{
 							Description: "unhealthyNodeConditions contains a list of conditions that determine whether a node is considered unhealthy. The conditions are combined in a logical OR, i.e. if any of the conditions is met, the node is unhealthy.",
 							Type:        []string{"array"},
@@ -3431,7 +3608,7 @@ func schema_cluster_api_api_core_v1beta2_MachineHealthCheckSpec(ref common.Refer
 					"remediationTemplate": {
 						SchemaProps: spec.SchemaProps{
 							Description: "remediationTemplate is a reference to a remediation template provided by an infrastructure provider.\n\nThis field is completely optional, when filled, the MachineHealthCheck controller creates a new object from the template referenced and hands off remediation of the machine to a controller that lives outside of Cluster API.",
-							Ref:         ref("k8s.io/api/core/v1.ObjectReference"),
+							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.MachineHealthCheckRemediationTemplateReference"),
 						},
 					},
 				},
@@ -3439,7 +3616,7 @@ func schema_cluster_api_api_core_v1beta2_MachineHealthCheckSpec(ref common.Refer
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.ObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector", "k8s.io/apimachinery/pkg/util/intstr.IntOrString", "sigs.k8s.io/cluster-api/api/core/v1beta2.UnhealthyNodeCondition"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector", "k8s.io/apimachinery/pkg/util/intstr.IntOrString", "sigs.k8s.io/cluster-api/api/core/v1beta2.MachineHealthCheckRemediationTemplateReference", "sigs.k8s.io/cluster-api/api/core/v1beta2.UnhealthyNodeCondition"},
 	}
 }
 
@@ -3475,7 +3652,6 @@ func schema_cluster_api_api_core_v1beta2_MachineHealthCheckStatus(ref common.Ref
 					"expectedMachines": {
 						SchemaProps: spec.SchemaProps{
 							Description: "expectedMachines is the total number of machines counted by this machine health check",
-							Default:     0,
 							Type:        []string{"integer"},
 							Format:      "int32",
 						},
@@ -3483,7 +3659,6 @@ func schema_cluster_api_api_core_v1beta2_MachineHealthCheckStatus(ref common.Ref
 					"currentHealthy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "currentHealthy is the total number of healthy machines counted by this machine health check",
-							Default:     0,
 							Type:        []string{"integer"},
 							Format:      "int32",
 						},
@@ -3491,7 +3666,6 @@ func schema_cluster_api_api_core_v1beta2_MachineHealthCheckStatus(ref common.Ref
 					"remediationsAllowed": {
 						SchemaProps: spec.SchemaProps{
 							Description: "remediationsAllowed is the number of further remediations allowed by this machine health check before maxUnhealthy short circuiting will be applied",
-							Default:     0,
 							Type:        []string{"integer"},
 							Format:      "int32",
 						},
@@ -3504,6 +3678,11 @@ func schema_cluster_api_api_core_v1beta2_MachineHealthCheckStatus(ref common.Ref
 						},
 					},
 					"targets": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
 						SchemaProps: spec.SchemaProps{
 							Description: "targets shows the current list of machines the machine health check is watching",
 							Type:        []string{"array"},
@@ -3547,6 +3726,11 @@ func schema_cluster_api_api_core_v1beta2_MachineHealthCheckTopology(ref common.R
 						},
 					},
 					"unhealthyNodeConditions": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
 						SchemaProps: spec.SchemaProps{
 							Description: "unhealthyNodeConditions contains a list of conditions that determine whether a node is considered unhealthy. The conditions are combined in a logical OR, i.e. if any of the conditions is met, the node is unhealthy.",
 							Type:        []string{"array"},
@@ -3583,14 +3767,14 @@ func schema_cluster_api_api_core_v1beta2_MachineHealthCheckTopology(ref common.R
 					"remediationTemplate": {
 						SchemaProps: spec.SchemaProps{
 							Description: "remediationTemplate is a reference to a remediation template provided by an infrastructure provider.\n\nThis field is completely optional, when filled, the MachineHealthCheck controller creates a new object from the template referenced and hands off remediation of the machine to a controller that lives outside of Cluster API.",
-							Ref:         ref("k8s.io/api/core/v1.ObjectReference"),
+							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.MachineHealthCheckRemediationTemplateReference"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.ObjectReference", "k8s.io/apimachinery/pkg/util/intstr.IntOrString", "sigs.k8s.io/cluster-api/api/core/v1beta2.UnhealthyNodeCondition"},
+			"k8s.io/apimachinery/pkg/util/intstr.IntOrString", "sigs.k8s.io/cluster-api/api/core/v1beta2.MachineHealthCheckRemediationTemplateReference", "sigs.k8s.io/cluster-api/api/core/v1beta2.UnhealthyNodeCondition"},
 	}
 }
 
@@ -3633,7 +3817,6 @@ func schema_cluster_api_api_core_v1beta2_MachineInitializationStatus(ref common.
 					"infrastructureProvisioned": {
 						SchemaProps: spec.SchemaProps{
 							Description: "infrastructureProvisioned is true when the infrastructure provider reports that Machine's infrastructure is fully provisioned. NOTE: this field is part of the Cluster API contract, and it is used to orchestrate provisioning. The value of this field is never updated after provisioning is completed.",
-							Default:     false,
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
@@ -3641,7 +3824,6 @@ func schema_cluster_api_api_core_v1beta2_MachineInitializationStatus(ref common.
 					"bootstrapDataSecretCreated": {
 						SchemaProps: spec.SchemaProps{
 							Description: "bootstrapDataSecretCreated is true when the bootstrap provider reports that the Machine's boostrap secret is created. NOTE: this field is part of the Cluster API contract, and it is used to orchestrate provisioning. The value of this field is never updated after provisioning is completed.",
-							Default:     false,
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
@@ -3788,6 +3970,7 @@ func schema_cluster_api_api_core_v1beta2_MachinePool(ref common.ReferenceCallbac
 						},
 					},
 				},
+				Required: []string{"spec"},
 			},
 		},
 		Dependencies: []string{
@@ -3818,6 +4001,11 @@ func schema_cluster_api_api_core_v1beta2_MachinePoolClass(ref common.ReferenceCa
 						},
 					},
 					"failureDomains": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
 						SchemaProps: spec.SchemaProps{
 							Description: "failureDomains is the list of failure domains the MachinePool should be attached to. Must match a key in the FailureDomains map stored on the cluster object. NOTE: This value can be overridden while defining a Cluster.Topology using this MachinePoolClass.",
 							Type:        []string{"array"},
@@ -3875,6 +4063,52 @@ func schema_cluster_api_api_core_v1beta2_MachinePoolClass(ref common.ReferenceCa
 	}
 }
 
+func schema_cluster_api_api_core_v1beta2_MachinePoolClassBootstrapTemplate(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "MachinePoolClassBootstrapTemplate defines the BootstrapTemplate for a MachinePool.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"templateRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "templateRef is a required reference to the BootstrapTemplate for a MachinePool.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassTemplateReference"),
+						},
+					},
+				},
+				Required: []string{"templateRef"},
+			},
+		},
+		Dependencies: []string{
+			"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassTemplateReference"},
+	}
+}
+
+func schema_cluster_api_api_core_v1beta2_MachinePoolClassInfrastructureTemplate(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "MachinePoolClassInfrastructureTemplate defines the InfrastructureTemplate for a MachinePool.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"templateRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "templateRef is a required reference to the InfrastructureTemplate for a MachinePool.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassTemplateReference"),
+						},
+					},
+				},
+				Required: []string{"templateRef"},
+			},
+		},
+		Dependencies: []string{
+			"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassTemplateReference"},
+	}
+}
+
 func schema_cluster_api_api_core_v1beta2_MachinePoolClassNamingStrategy(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -3913,14 +4147,14 @@ func schema_cluster_api_api_core_v1beta2_MachinePoolClassTemplate(ref common.Ref
 						SchemaProps: spec.SchemaProps{
 							Description: "bootstrap contains the bootstrap template reference to be used for the creation of the Machines in the MachinePool.",
 							Default:     map[string]interface{}{},
-							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassTemplate"),
+							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolClassBootstrapTemplate"),
 						},
 					},
 					"infrastructure": {
 						SchemaProps: spec.SchemaProps{
 							Description: "infrastructure contains the infrastructure template reference to be used for the creation of the MachinePool.",
 							Default:     map[string]interface{}{},
-							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassTemplate"),
+							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolClassInfrastructureTemplate"),
 						},
 					},
 				},
@@ -3928,7 +4162,7 @@ func schema_cluster_api_api_core_v1beta2_MachinePoolClassTemplate(ref common.Ref
 			},
 		},
 		Dependencies: []string{
-			"sigs.k8s.io/cluster-api/api/core/v1beta2.ClusterClassTemplate", "sigs.k8s.io/cluster-api/api/core/v1beta2.ObjectMeta"},
+			"sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolClassBootstrapTemplate", "sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolClassInfrastructureTemplate", "sigs.k8s.io/cluster-api/api/core/v1beta2.ObjectMeta"},
 	}
 }
 
@@ -3963,7 +4197,6 @@ func schema_cluster_api_api_core_v1beta2_MachinePoolInitializationStatus(ref com
 					"infrastructureProvisioned": {
 						SchemaProps: spec.SchemaProps{
 							Description: "infrastructureProvisioned is true when the infrastructure provider reports that MachinePool's infrastructure is fully provisioned. NOTE: this field is part of the Cluster API contract, and it is used to orchestrate provisioning. The value of this field is never updated after provisioning is completed.",
-							Default:     false,
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
@@ -3971,7 +4204,6 @@ func schema_cluster_api_api_core_v1beta2_MachinePoolInitializationStatus(ref com
 					"bootstrapDataSecretCreated": {
 						SchemaProps: spec.SchemaProps{
 							Description: "bootstrapDataSecretCreated is true when the bootstrap provider reports that the MachinePool's boostrap secret is created. NOTE: this field is part of the Cluster API contract, and it is used to orchestrate provisioning. The value of this field is never updated after provisioning is completed.",
-							Default:     false,
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
@@ -4063,6 +4295,11 @@ func schema_cluster_api_api_core_v1beta2_MachinePoolSpec(ref common.ReferenceCal
 						},
 					},
 					"providerIDList": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
 						SchemaProps: spec.SchemaProps{
 							Description: "providerIDList are the identification IDs of machine instances provided by the provider. This field must match the provider IDs as seen on the node objects corresponding to a machine pool's machine instances.",
 							Type:        []string{"array"},
@@ -4078,6 +4315,11 @@ func schema_cluster_api_api_core_v1beta2_MachinePoolSpec(ref common.ReferenceCal
 						},
 					},
 					"failureDomains": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
 						SchemaProps: spec.SchemaProps{
 							Description: "failureDomains is the list of failure domains this MachinePool should be attached to.",
 							Type:        []string{"array"},
@@ -4133,10 +4375,16 @@ func schema_cluster_api_api_core_v1beta2_MachinePoolStatus(ref common.ReferenceC
 					"initialization": {
 						SchemaProps: spec.SchemaProps{
 							Description: "initialization provides observations of the MachinePool initialization process. NOTE: Fields in this struct are part of the Cluster API contract and are used to orchestrate initial MachinePool provisioning.",
+							Default:     map[string]interface{}{},
 							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.MachinePoolInitializationStatus"),
 						},
 					},
 					"nodeRefs": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
 						SchemaProps: spec.SchemaProps{
 							Description: "nodeRefs will point to the corresponding Nodes if it they exist.",
 							Type:        []string{"array"},
@@ -4237,6 +4485,11 @@ func schema_cluster_api_api_core_v1beta2_MachinePoolTopology(ref common.Referenc
 						},
 					},
 					"failureDomains": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
 						SchemaProps: spec.SchemaProps{
 							Description: "failureDomains is the list of failure domains the machine pool will be created in. Must match a key in the FailureDomains map stored on the cluster object.",
 							Type:        []string{"array"},
@@ -4508,6 +4761,7 @@ func schema_cluster_api_api_core_v1beta2_MachineSet(ref common.ReferenceCallback
 						},
 					},
 				},
+				Required: []string{"spec"},
 			},
 		},
 		Dependencies: []string{
@@ -4637,7 +4891,7 @@ func schema_cluster_api_api_core_v1beta2_MachineSetSpec(ref common.ReferenceCall
 						},
 					},
 				},
-				Required: []string{"clusterName", "selector"},
+				Required: []string{"clusterName", "selector", "template"},
 			},
 		},
 		Dependencies: []string{
@@ -4823,7 +5077,7 @@ func schema_cluster_api_api_core_v1beta2_MachineSpec(ref common.ReferenceCallbac
 						SchemaProps: spec.SchemaProps{
 							Description: "infrastructureRef is a required reference to a custom resource offered by an infrastructure provider.",
 							Default:     map[string]interface{}{},
-							Ref:         ref("k8s.io/api/core/v1.ObjectReference"),
+							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.ContractVersionedObjectReference"),
 						},
 					},
 					"version": {
@@ -4864,7 +5118,7 @@ func schema_cluster_api_api_core_v1beta2_MachineSpec(ref common.ReferenceCallbac
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "readinessGates specifies additional conditions to include when evaluating Machine Ready condition.\n\nThis field can be used e.g. by Cluster API control plane providers to extend the semantic of the Ready condition for the Machine they control, like the kubeadm control provider adding ReadinessGates for the APIServerPodHealthy, SchedulerPodHealthy conditions, etc.\n\nAnother example are external controllers, e.g. responsible to install special software/hardware on the Machines; they can include the status of those components with a new condition and add this condition to ReadinessGates.\n\nNOTE: This field is considered only for computing v1beta2 conditions. NOTE: In case readinessGates conditions start with the APIServer, ControllerManager, Scheduler prefix, and all those readiness gates condition are reporting the same message, when computing the Machine's Ready condition those readinessGates will be replaced by a single entry reporting \"Control plane components: \" + message. This helps to improve readability of conditions bubbling up to the Machine's owner resource / to the Cluster).",
+							Description: "readinessGates specifies additional conditions to include when evaluating Machine Ready condition.\n\nThis field can be used e.g. by Cluster API control plane providers to extend the semantic of the Ready condition for the Machine they control, like the kubeadm control provider adding ReadinessGates for the APIServerPodHealthy, SchedulerPodHealthy conditions, etc.\n\nAnother example are external controllers, e.g. responsible to install special software/hardware on the Machines; they can include the status of those components with a new condition and add this condition to ReadinessGates.\n\nNOTE: In case readinessGates conditions start with the APIServer, ControllerManager, Scheduler prefix, and all those readiness gates condition are reporting the same message, when computing the Machine's Ready condition those readinessGates will be replaced by a single entry reporting \"Control plane components: \" + message. This helps to improve readability of conditions bubbling up to the Machine's owner resource / to the Cluster).",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -4902,7 +5156,7 @@ func schema_cluster_api_api_core_v1beta2_MachineSpec(ref common.ReferenceCallbac
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.ObjectReference", "sigs.k8s.io/cluster-api/api/core/v1beta2.Bootstrap", "sigs.k8s.io/cluster-api/api/core/v1beta2.MachineReadinessGate"},
+			"sigs.k8s.io/cluster-api/api/core/v1beta2.Bootstrap", "sigs.k8s.io/cluster-api/api/core/v1beta2.ContractVersionedObjectReference", "sigs.k8s.io/cluster-api/api/core/v1beta2.MachineReadinessGate"},
 	}
 }
 
@@ -4938,6 +5192,7 @@ func schema_cluster_api_api_core_v1beta2_MachineStatus(ref common.ReferenceCallb
 					"initialization": {
 						SchemaProps: spec.SchemaProps{
 							Description: "initialization provides observations of the Machine initialization process. NOTE: Fields in this struct are part of the Cluster API contract and are used to orchestrate initial Machine provisioning.",
+							Default:     map[string]interface{}{},
 							Ref:         ref("sigs.k8s.io/cluster-api/api/core/v1beta2.MachineInitializationStatus"),
 						},
 					},
@@ -5035,6 +5290,7 @@ func schema_cluster_api_api_core_v1beta2_MachineTemplateSpec(ref common.Referenc
 						},
 					},
 				},
+				Required: []string{"spec"},
 			},
 		},
 		Dependencies: []string{
@@ -5093,6 +5349,11 @@ func schema_cluster_api_api_core_v1beta2_NetworkRanges(ref common.ReferenceCallb
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"cidrBlocks": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
 						SchemaProps: spec.SchemaProps{
 							Description: "cidrBlocks is a list of CIDR blocks.",
 							Type:        []string{"array"},
@@ -5174,6 +5435,11 @@ func schema_cluster_api_api_core_v1beta2_PatchDefinition(ref common.ReferenceCal
 						},
 					},
 					"jsonPatches": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
 						SchemaProps: spec.SchemaProps{
 							Description: "jsonPatches defines the patches which should be applied on the templates matching the selector. Note: Patches will be applied in the order of the array.",
 							Type:        []string{"array"},
@@ -5284,6 +5550,11 @@ func schema_cluster_api_api_core_v1beta2_PatchSelectorMatchMachineDeploymentClas
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"names": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
 						SchemaProps: spec.SchemaProps{
 							Description: "names selects templates by class names.",
 							Type:        []string{"array"},
@@ -5312,6 +5583,11 @@ func schema_cluster_api_api_core_v1beta2_PatchSelectorMatchMachinePoolClass(ref 
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"names": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
 						SchemaProps: spec.SchemaProps{
 							Description: "names selects templates by class names.",
 							Type:        []string{"array"},

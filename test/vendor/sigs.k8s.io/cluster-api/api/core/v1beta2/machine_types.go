@@ -388,19 +388,19 @@ type MachineSpec struct {
 	// bootstrap is a reference to a local struct which encapsulates
 	// fields to configure the Machine’s bootstrapping mechanism.
 	// +required
-	Bootstrap Bootstrap `json:"bootstrap"`
+	Bootstrap Bootstrap `json:"bootstrap,omitempty,omitzero"`
 
 	// infrastructureRef is a required reference to a custom resource
 	// offered by an infrastructure provider.
 	// +required
-	InfrastructureRef corev1.ObjectReference `json:"infrastructureRef"`
+	InfrastructureRef ContractVersionedObjectReference `json:"infrastructureRef"`
 
 	// version defines the desired Kubernetes version.
 	// This field is meant to be optionally used by bootstrap providers.
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=256
-	Version *string `json:"version,omitempty"`
+	Version string `json:"version,omitempty"`
 
 	// providerID is the identification ID of the machine provided by the provider.
 	// This field must match the provider ID as seen on the node object corresponding to this machine.
@@ -415,18 +415,19 @@ type MachineSpec struct {
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=512
-	ProviderID *string `json:"providerID,omitempty"`
+	ProviderID string `json:"providerID,omitempty"`
 
 	// failureDomain is the failure domain the machine will be created in.
 	// Must match the name of a FailureDomain from the Cluster status.
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=256
-	FailureDomain *string `json:"failureDomain,omitempty"`
+	FailureDomain string `json:"failureDomain,omitempty"`
 
 	// minReadySeconds is the minimum number of seconds for which a Machine should be ready before considering it available.
 	// Defaults to 0 (Machine will be considered available as soon as the Machine is ready)
 	// +optional
+	// +kubebuilder:validation:Minimum=0
 	MinReadySeconds *int32 `json:"minReadySeconds,omitempty"`
 
 	// readinessGates specifies additional conditions to include when evaluating Machine Ready condition.
@@ -438,7 +439,6 @@ type MachineSpec struct {
 	// Another example are external controllers, e.g. responsible to install special software/hardware on the Machines;
 	// they can include the status of those components with a new condition and add this condition to ReadinessGates.
 	//
-	// NOTE: This field is considered only for computing v1beta2 conditions.
 	// NOTE: In case readinessGates conditions start with the APIServer, ControllerManager, Scheduler prefix, and all those
 	// readiness gates condition are reporting the same message, when computing the Machine's Ready condition those
 	// readinessGates will be replaced by a single entry reporting "Control plane components: " + message.
@@ -496,6 +496,7 @@ type MachineReadinessGate struct {
 // ANCHOR: MachineStatus
 
 // MachineStatus defines the observed state of Machine.
+// +kubebuilder:validation:MinProperties=1
 type MachineStatus struct {
 	// conditions represents the observations of a Machine's current state.
 	// Known condition types are Available, Ready, UpToDate, BootstrapConfigReady, InfrastructureReady, NodeReady,
@@ -512,7 +513,7 @@ type MachineStatus struct {
 	// initialization provides observations of the Machine initialization process.
 	// NOTE: Fields in this struct are part of the Cluster API contract and are used to orchestrate initial Machine provisioning.
 	// +optional
-	Initialization *MachineInitializationStatus `json:"initialization,omitempty"`
+	Initialization MachineInitializationStatus `json:"initialization,omitempty,omitzero"`
 
 	// nodeRef will point to the corresponding Node if it exists.
 	// +optional
@@ -544,6 +545,7 @@ type MachineStatus struct {
 
 	// observedGeneration is the latest generation observed by the controller.
 	// +optional
+	// +kubebuilder:validation:Minimum=1
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 
 	// deletion contains information relating to removal of the Machine.
@@ -569,18 +571,19 @@ type MachineNodeReference struct {
 
 // MachineInitializationStatus provides observations of the Machine initialization process.
 // NOTE: Fields in this struct are part of the Cluster API contract and are used to orchestrate initial Machine provisioning.
+// +kubebuilder:validation:MinProperties=1
 type MachineInitializationStatus struct {
 	// infrastructureProvisioned is true when the infrastructure provider reports that Machine's infrastructure is fully provisioned.
 	// NOTE: this field is part of the Cluster API contract, and it is used to orchestrate provisioning.
 	// The value of this field is never updated after provisioning is completed.
 	// +optional
-	InfrastructureProvisioned bool `json:"infrastructureProvisioned"`
+	InfrastructureProvisioned *bool `json:"infrastructureProvisioned,omitempty"`
 
 	// bootstrapDataSecretCreated is true when the bootstrap provider reports that the Machine's boostrap secret is created.
 	// NOTE: this field is part of the Cluster API contract, and it is used to orchestrate provisioning.
 	// The value of this field is never updated after provisioning is completed.
 	// +optional
-	BootstrapDataSecretCreated bool `json:"bootstrapDataSecretCreated"`
+	BootstrapDataSecretCreated *bool `json:"bootstrapDataSecretCreated,omitempty"`
 }
 
 // MachineDeprecatedStatus groups all the status fields that are deprecated and will be removed in a future version.
@@ -648,7 +651,7 @@ type MachineV1Beta1DeprecatedStatus struct {
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=10240
-	FailureMessage *string `json:"failureMessage,omitempty"`
+	FailureMessage *string `json:"failureMessage,omitempty"` //nolint:kubeapilinter // field will be removed when v1beta1 is removed
 }
 
 // ANCHOR_END: MachineStatus
@@ -702,7 +705,7 @@ type Bootstrap struct {
 	// allow users/operators to specify Bootstrap.DataSecretName without
 	// the need of a controller.
 	// +optional
-	ConfigRef *corev1.ObjectReference `json:"configRef,omitempty"`
+	ConfigRef *ContractVersionedObjectReference `json:"configRef,omitempty"`
 
 	// dataSecretName is the name of the secret that stores the bootstrap data script.
 	// If nil, the Machine should remain in the Pending state.
@@ -734,11 +737,11 @@ type Machine struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// spec is the desired state of Machine.
-	// +optional
-	Spec MachineSpec `json:"spec,omitempty"`
+	// +required
+	Spec MachineSpec `json:"spec,omitempty,omitzero"`
 	// status is the observed state of Machine.
 	// +optional
-	Status MachineStatus `json:"status,omitempty"`
+	Status MachineStatus `json:"status,omitempty,omitzero"`
 }
 
 // GetV1Beta1Conditions returns the set of conditions for this object.

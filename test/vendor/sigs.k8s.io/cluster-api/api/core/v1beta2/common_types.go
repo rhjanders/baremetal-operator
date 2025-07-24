@@ -20,6 +20,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1validation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
@@ -302,6 +303,7 @@ type MachineAddress struct {
 
 // MachineAddresses is a slice of MachineAddress items to be used by infrastructure providers.
 // +kubebuilder:validation:MaxItems=32
+// +listType=atomic
 type MachineAddresses []MachineAddress
 
 // ObjectMeta is metadata that all persisted resources must have, which includes all objects
@@ -325,6 +327,7 @@ type MachineAddresses []MachineAddress
 //
 // In future versions, controller-tools@v2 might allow overriding the type and validation for embedded
 // types. When that happens, this hack should be revisited.
+// +kubebuilder:validation:MinProperties=1
 type ObjectMeta struct {
 	// labels is a map of string keys and values that can be used to organize and categorize
 	// (scope and select) objects. May match selectors of replication controllers
@@ -352,4 +355,41 @@ func (metadata *ObjectMeta) Validate(parent *field.Path) field.ErrorList {
 		parent.Child("annotations"),
 	)...)
 	return allErrs
+}
+
+// ContractVersionedObjectReference is a reference to a resource for which the version is inferred from contract labels.
+type ContractVersionedObjectReference struct {
+	// kind of the resource being referenced.
+	// kind must consist of alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character.
+	// +required
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=63
+	// +kubebuilder:validation:Pattern=`^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$`
+	Kind string `json:"kind"`
+
+	// name of the resource being referenced.
+	// name must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character.
+	// +required
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=253
+	// +kubebuilder:validation:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	Name string `json:"name"`
+
+	// apiGroup is the group of the resource being referenced.
+	// apiGroup must be fully qualified domain name.
+	// The corresponding version for this reference will be looked up from the contract
+	// labels of the corresponding CRD of the resource being referenced.
+	// +required
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=253
+	// +kubebuilder:validation:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	APIGroup string `json:"apiGroup"`
+}
+
+// GroupKind returns the GroupKind of the reference.
+func (r *ContractVersionedObjectReference) GroupKind() schema.GroupKind {
+	return schema.GroupKind{
+		Group: r.APIGroup,
+		Kind:  r.Kind,
+	}
 }

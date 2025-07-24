@@ -54,6 +54,7 @@ type IPAddressClaimSpec struct {
 }
 
 // IPAddressClaimStatus is the observed status of a IPAddressClaim.
+// +kubebuilder:validation:MinProperties=1
 type IPAddressClaimStatus struct {
 	// conditions represents the observations of a IPAddressClaim's current state.
 	// Known condition types are Ready.
@@ -65,7 +66,7 @@ type IPAddressClaimStatus struct {
 
 	// addressRef is a reference to the address that was created for this claim.
 	// +optional
-	AddressRef IPAddressReference `json:"addressRef,omitempty"`
+	AddressRef IPAddressReference `json:"addressRef,omitempty,omitzero"`
 
 	// deprecated groups all the status fields that are deprecated and will be removed when all the nested field are removed.
 	// +optional
@@ -119,11 +120,11 @@ type IPAddressClaim struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// spec is the desired state of IPAddressClaim.
-	// +optional
-	Spec IPAddressClaimSpec `json:"spec,omitempty"`
+	// +required
+	Spec IPAddressClaimSpec `json:"spec,omitempty,omitzero"`
 	// status is the observed state of IPAddressClaim.
 	// +optional
-	Status IPAddressClaimStatus `json:"status,omitempty"`
+	Status IPAddressClaimStatus `json:"status,omitempty,omitzero"`
 }
 
 // GetV1Beta1Conditions returns the set of conditions for this object.

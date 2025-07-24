@@ -50,6 +50,7 @@ var (
 
 // KubeadmConfigSpec defines the desired state of KubeadmConfig.
 // Either ClusterConfiguration and InitConfiguration should be defined or the JoinConfiguration should be defined.
+// +kubebuilder:validation:MinProperties=1
 type KubeadmConfigSpec struct {
 	// clusterConfiguration along with InitConfiguration are the configurations necessary for the init command
 	// +optional
@@ -65,6 +66,7 @@ type KubeadmConfigSpec struct {
 
 	// files specifies extra files to be passed to user_data upon creation.
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=200
 	Files []File `json:"files,omitempty"`
 
@@ -74,6 +76,7 @@ type KubeadmConfigSpec struct {
 
 	// mounts specifies a list of mount points to be setup.
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=100
 	Mounts []MountPoints `json:"mounts,omitempty"`
 
@@ -81,6 +84,7 @@ type KubeadmConfigSpec struct {
 	// module. bootcmd will run on every boot, 'cloud-init-per' command can be used to make bootcmd run exactly
 	// once. This is typically run in the cloud-init.service systemd unit. This has no effect in Ignition.
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=1000
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:MaxLength=10240
@@ -90,6 +94,7 @@ type KubeadmConfigSpec struct {
 	// With cloud-init, this is prepended to the runcmd module configuration, and is typically executed in
 	// the cloud-final.service systemd unit. In Ignition, this is prepended to /etc/kubeadm.sh.
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=1000
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:MaxLength=10240
@@ -99,6 +104,7 @@ type KubeadmConfigSpec struct {
 	// With cloud-init, this is appended to the runcmd module configuration, and is typically executed in
 	// the cloud-final.service systemd unit. In Ignition, this is appended to /etc/kubeadm.sh.
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=1000
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:MaxLength=10240
@@ -106,6 +112,7 @@ type KubeadmConfigSpec struct {
 
 	// users specifies extra users to add
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=100
 	Users []User `json:"users,omitempty"`
 
@@ -274,7 +281,7 @@ func (c *KubeadmConfigSpec) validateUsers(pathPrefix *field.Path) field.ErrorLis
 
 	for i := range c.Users {
 		user := c.Users[i]
-		if user.Passwd != nil && user.PasswdFrom != nil {
+		if user.Passwd != "" && user.PasswdFrom != nil {
 			allErrs = append(
 				allErrs,
 				field.Invalid(
@@ -383,12 +390,12 @@ func (c *KubeadmConfigSpec) validateIgnition(pathPrefix *field.Path) field.Error
 	}
 
 	for i, partition := range c.DiskSetup.Partitions {
-		if partition.TableType != nil && *partition.TableType != "gpt" {
+		if partition.TableType != "" && partition.TableType != "gpt" {
 			allErrs = append(
 				allErrs,
 				field.Invalid(
 					pathPrefix.Child("diskSetup", "partitions").Index(i).Child("tableType"),
-					*partition.TableType,
+					partition.TableType,
 					fmt.Sprintf(
 						"only partition type %q is supported when spec.format is set to %q",
 						"gpt",
@@ -400,7 +407,7 @@ func (c *KubeadmConfigSpec) validateIgnition(pathPrefix *field.Path) field.Error
 	}
 
 	for i, fs := range c.DiskSetup.Filesystems {
-		if fs.ReplaceFS != nil {
+		if fs.ReplaceFS != "" {
 			allErrs = append(
 				allErrs,
 				field.Forbidden(
@@ -410,7 +417,7 @@ func (c *KubeadmConfigSpec) validateIgnition(pathPrefix *field.Path) field.Error
 			)
 		}
 
-		if fs.Partition != nil {
+		if fs.Partition != "" {
 			allErrs = append(
 				allErrs,
 				field.Forbidden(
@@ -446,10 +453,11 @@ type ContainerLinuxConfig struct {
 
 	// strict controls if AdditionalConfig should be strictly parsed. If so, warnings are treated as errors.
 	// +optional
-	Strict bool `json:"strict,omitempty"`
+	Strict *bool `json:"strict,omitempty"`
 }
 
 // KubeadmConfigStatus defines the observed state of KubeadmConfig.
+// +kubebuilder:validation:MinProperties=1
 type KubeadmConfigStatus struct {
 	// conditions represents the observations of a KubeadmConfig's current state.
 	// Known condition types are Ready, DataSecretAvailable, CertificatesAvailable.
@@ -462,16 +470,17 @@ type KubeadmConfigStatus struct {
 	// initialization provides observations of the KubeadmConfig initialization process.
 	// NOTE: Fields in this struct are part of the Cluster API contract and are used to orchestrate initial Machine provisioning.
 	// +optional
-	Initialization *KubeadmConfigInitializationStatus `json:"initialization,omitempty"`
+	Initialization KubeadmConfigInitializationStatus `json:"initialization,omitempty,omitzero"`
 
 	// dataSecretName is the name of the secret that stores the bootstrap data script.
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=253
-	DataSecretName *string `json:"dataSecretName,omitempty"`
+	DataSecretName string `json:"dataSecretName,omitempty"`
 
 	// observedGeneration is the latest generation observed by the controller.
 	// +optional
+	// +kubebuilder:validation:Minimum=1
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 
 	// deprecated groups all the status fields that are deprecated and will be removed when all the nested field are removed.
@@ -480,11 +489,12 @@ type KubeadmConfigStatus struct {
 }
 
 // KubeadmConfigInitializationStatus provides observations of the KubeadmConfig initialization process.
+// +kubebuilder:validation:MinProperties=1
 type KubeadmConfigInitializationStatus struct {
 	// dataSecretCreated is true when the Machine's boostrap secret is created.
 	// NOTE: this field is part of the Cluster API contract, and it is used to orchestrate initial Machine provisioning.
 	// +optional
-	DataSecretCreated bool `json:"dataSecretCreated,omitempty"`
+	DataSecretCreated *bool `json:"dataSecretCreated,omitempty"`
 }
 
 // KubeadmConfigDeprecatedStatus groups all the status fields that are deprecated and will be removed in a future version.
@@ -541,10 +551,10 @@ type KubeadmConfig struct {
 
 	// spec is the desired state of KubeadmConfig.
 	// +optional
-	Spec KubeadmConfigSpec `json:"spec,omitempty"`
+	Spec KubeadmConfigSpec `json:"spec,omitempty,omitzero"`
 	// status is the observed state of KubeadmConfig.
 	// +optional
-	Status KubeadmConfigStatus `json:"status,omitempty"`
+	Status KubeadmConfigStatus `json:"status,omitempty,omitzero"`
 }
 
 // GetV1Beta1Conditions returns the set of conditions for this object.
@@ -632,7 +642,7 @@ type File struct {
 
 	// append specifies whether to append Content to existing file if Path exists.
 	// +optional
-	Append bool `json:"append,omitempty"`
+	Append *bool `json:"append,omitempty"`
 
 	// content is the actual content of the file.
 	// +optional
@@ -711,19 +721,19 @@ type User struct {
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=256
-	Gecos *string `json:"gecos,omitempty"`
+	Gecos string `json:"gecos,omitempty"`
 
 	// groups specifies the additional groups for the user
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=256
-	Groups *string `json:"groups,omitempty"`
+	Groups string `json:"groups,omitempty"`
 
 	// homeDir specifies the home directory to use for the user
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=256
-	HomeDir *string `json:"homeDir,omitempty"`
+	HomeDir string `json:"homeDir,omitempty"`
 
 	// inactive specifies whether to mark the user as inactive
 	// +optional
@@ -733,13 +743,13 @@ type User struct {
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=256
-	Shell *string `json:"shell,omitempty"`
+	Shell string `json:"shell,omitempty"`
 
 	// passwd specifies a hashed password for the user
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=256
-	Passwd *string `json:"passwd,omitempty"`
+	Passwd string `json:"passwd,omitempty"`
 
 	// passwdFrom is a referenced source of passwd to populate the passwd.
 	// +optional
@@ -749,7 +759,7 @@ type User struct {
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=256
-	PrimaryGroup *string `json:"primaryGroup,omitempty"`
+	PrimaryGroup string `json:"primaryGroup,omitempty"`
 
 	// lockPassword specifies if password login should be disabled
 	// +optional
@@ -759,10 +769,11 @@ type User struct {
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=256
-	Sudo *string `json:"sudo,omitempty"`
+	Sudo string `json:"sudo,omitempty"`
 
 	// sshAuthorizedKeys specifies a list of ssh authorized keys for the user
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=100
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:MaxLength=2048
@@ -773,6 +784,7 @@ type User struct {
 type NTP struct {
 	// servers specifies which NTP servers to use
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=100
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:MaxLength=512
@@ -787,11 +799,13 @@ type NTP struct {
 type DiskSetup struct {
 	// partitions specifies the list of the partitions to setup.
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=100
 	Partitions []Partition `json:"partitions,omitempty"`
 
 	// filesystems specifies the list of file systems to setup.
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=100
 	Filesystems []Filesystem `json:"filesystems,omitempty"`
 }
@@ -817,7 +831,7 @@ type Partition struct {
 	// 'gpt': setups a GPT partition table
 	// +optional
 	// +kubebuilder:validation:Enum=mbr;gpt
-	TableType *string `json:"tableType,omitempty"`
+	TableType string `json:"tableType,omitempty"`
 }
 
 // Filesystem defines the file systems to be created.
@@ -844,7 +858,7 @@ type Filesystem struct {
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=128
-	Partition *string `json:"partition,omitempty"`
+	Partition string `json:"partition,omitempty"`
 
 	// overwrite defines whether or not to overwrite any existing filesystem.
 	// If true, any pre-existing file system will be destroyed. Use with Caution.
@@ -856,10 +870,11 @@ type Filesystem struct {
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=128
-	ReplaceFS *string `json:"replaceFS,omitempty"`
+	ReplaceFS string `json:"replaceFS,omitempty"`
 
 	// extraOpts defined extra options to add to the command for creating the file system.
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=100
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:MaxLength=256
