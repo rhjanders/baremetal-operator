@@ -4,6 +4,7 @@ metadata:
   annotations:
     capability.openshift.io/name: baremetal
     controller-gen.kubebuilder.io/version: v0.16.5
+    include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   name: baremetalhosts.metal3.io
@@ -1268,6 +1269,7 @@ metadata:
   annotations:
     capability.openshift.io/name: baremetal
     controller-gen.kubebuilder.io/version: v0.16.5
+    include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   name: bmceventsubscriptions.metal3.io
@@ -1360,6 +1362,7 @@ metadata:
   annotations:
     capability.openshift.io/name: baremetal
     controller-gen.kubebuilder.io/version: v0.16.5
+    include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   name: dataimages.metal3.io
@@ -1444,6 +1447,7 @@ metadata:
   annotations:
     capability.openshift.io/name: baremetal
     controller-gen.kubebuilder.io/version: v0.16.5
+    include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   name: firmwareschemas.metal3.io
@@ -1541,6 +1545,7 @@ metadata:
   annotations:
     capability.openshift.io/name: baremetal
     controller-gen.kubebuilder.io/version: v0.16.5
+    include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   name: hardwaredata.metal3.io
@@ -1764,6 +1769,7 @@ metadata:
   annotations:
     capability.openshift.io/name: baremetal
     controller-gen.kubebuilder.io/version: v0.16.5
+    include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   name: hostfirmwarecomponents.metal3.io
@@ -1939,6 +1945,7 @@ metadata:
   annotations:
     capability.openshift.io/name: baremetal
     controller-gen.kubebuilder.io/version: v0.16.5
+    include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   name: hostfirmwaresettings.metal3.io
@@ -2098,6 +2105,7 @@ metadata:
   annotations:
     capability.openshift.io/name: baremetal
     controller-gen.kubebuilder.io/version: v0.16.5
+    include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   name: hostupdatepolicies.metal3.io
@@ -2161,6 +2169,7 @@ metadata:
   annotations:
     capability.openshift.io/name: baremetal
     controller-gen.kubebuilder.io/version: v0.16.5
+    include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
   name: preprovisioningimages.metal3.io
