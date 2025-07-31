@@ -22,7 +22,6 @@ import (
 	"net"
 	"strings"
 
-	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -459,10 +458,11 @@ const (
 // ANCHOR: ClusterSpec
 
 // ClusterSpec defines the desired state of Cluster.
+// +kubebuilder:validation:MinProperties=1
 type ClusterSpec struct {
 	// paused can be used to prevent controllers from processing the Cluster and all its associated objects.
 	// +optional
-	Paused bool `json:"paused,omitempty"`
+	Paused *bool `json:"paused,omitempty"`
 
 	// clusterNetwork represents the cluster network configuration.
 	// +optional
@@ -470,17 +470,17 @@ type ClusterSpec struct {
 
 	// controlPlaneEndpoint represents the endpoint used to communicate with the control plane.
 	// +optional
-	ControlPlaneEndpoint APIEndpoint `json:"controlPlaneEndpoint,omitempty"`
+	ControlPlaneEndpoint APIEndpoint `json:"controlPlaneEndpoint,omitempty,omitzero"`
 
 	// controlPlaneRef is an optional reference to a provider-specific resource that holds
 	// the details for provisioning the Control Plane for a Cluster.
 	// +optional
-	ControlPlaneRef *corev1.ObjectReference `json:"controlPlaneRef,omitempty"`
+	ControlPlaneRef *ContractVersionedObjectReference `json:"controlPlaneRef,omitempty"`
 
 	// infrastructureRef is a reference to a provider-specific resource that holds the details
 	// for provisioning infrastructure for a cluster in said provider.
 	// +optional
-	InfrastructureRef *corev1.ObjectReference `json:"infrastructureRef,omitempty"`
+	InfrastructureRef *ContractVersionedObjectReference `json:"infrastructureRef,omitempty"`
 
 	// topology encapsulates the topology for the cluster.
 	// NOTE: It is required to enable the ClusterTopology
@@ -549,7 +549,7 @@ type Topology struct {
 
 	// controlPlane describes the cluster control plane.
 	// +optional
-	ControlPlane ControlPlaneTopology `json:"controlPlane,omitempty"`
+	ControlPlane ControlPlaneTopology `json:"controlPlane,omitempty,omitzero"`
 
 	// workers encapsulates the different constructs that form the worker nodes
 	// for the cluster.
@@ -591,13 +591,14 @@ type ClusterClassRef struct {
 }
 
 // ControlPlaneTopology specifies the parameters for the control plane nodes in the cluster.
+// +kubebuilder:validation:MinProperties=1
 type ControlPlaneTopology struct {
 	// metadata is the metadata applied to the ControlPlane and the Machines of the ControlPlane
 	// if the ControlPlaneTemplate referenced by the ClusterClass is machine based. If not, it
 	// is applied only to the ControlPlane.
 	// At runtime this metadata is merged with the corresponding metadata from the ClusterClass.
 	// +optional
-	Metadata ObjectMeta `json:"metadata,omitempty"`
+	Metadata ObjectMeta `json:"metadata,omitempty,omitzero"`
 
 	// replicas is the number of control plane nodes.
 	// If the value is nil, the ControlPlane object is created without the number of Replicas
@@ -638,7 +639,6 @@ type ControlPlaneTopology struct {
 	//
 	// If this field is not defined, readinessGates from the corresponding ControlPlaneClass will be used, if any.
 	//
-	// NOTE: This field is considered only for computing v1beta2 conditions.
 	// NOTE: Specific control plane provider implementations might automatically extend the list of readinessGates;
 	// e.g. the kubeadm control provider adds ReadinessGates for the APIServerPodHealthy, SchedulerPodHealthy conditions, etc.
 	// +optional
@@ -675,7 +675,7 @@ type MachineDeploymentTopology struct {
 	// metadata is the metadata applied to the MachineDeployment and the machines of the MachineDeployment.
 	// At runtime this metadata is merged with the corresponding metadata from the ClusterClass.
 	// +optional
-	Metadata ObjectMeta `json:"metadata,omitempty"`
+	Metadata ObjectMeta `json:"metadata,omitempty,omitzero"`
 
 	// class is the name of the MachineDeploymentClass used to create the set of worker nodes.
 	// This should match one of the deployment classes defined in the ClusterClass object
@@ -699,7 +699,7 @@ type MachineDeploymentTopology struct {
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=256
-	FailureDomain *string `json:"failureDomain,omitempty"`
+	FailureDomain string `json:"failureDomain,omitempty"`
 
 	// replicas is the number of worker nodes belonging to this set.
 	// If the value is nil, the MachineDeployment is created without the number of Replicas (defaulting to 1)
@@ -738,6 +738,7 @@ type MachineDeploymentTopology struct {
 	// Defaults to 0 (machine will be considered available as soon as it
 	// is ready)
 	// +optional
+	// +kubebuilder:validation:Minimum=0
 	MinReadySeconds *int32 `json:"minReadySeconds,omitempty"`
 
 	// readinessGates specifies additional conditions to include when evaluating Machine Ready condition.
@@ -747,7 +748,6 @@ type MachineDeploymentTopology struct {
 	//
 	// If this field is not defined, readinessGates from the corresponding MachineDeploymentClass will be used, if any.
 	//
-	// NOTE: This field is considered only for computing v1beta2 conditions.
 	// +optional
 	// +listType=map
 	// +listMapKey=conditionType
@@ -789,7 +789,7 @@ type MachinePoolTopology struct {
 	// metadata is the metadata applied to the MachinePool.
 	// At runtime this metadata is merged with the corresponding metadata from the ClusterClass.
 	// +optional
-	Metadata ObjectMeta `json:"metadata,omitempty"`
+	Metadata ObjectMeta `json:"metadata,omitempty,omitzero"`
 
 	// class is the name of the MachinePoolClass used to create the pool of worker nodes.
 	// This should match one of the deployment classes defined in the ClusterClass object
@@ -811,6 +811,7 @@ type MachinePoolTopology struct {
 	// failureDomains is the list of failure domains the machine pool will be created in.
 	// Must match a key in the FailureDomains map stored on the cluster object.
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=100
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:MaxLength=256
@@ -841,6 +842,7 @@ type MachinePoolTopology struct {
 	// Defaults to 0 (machine will be considered available as soon as it
 	// is ready)
 	// +optional
+	// +kubebuilder:validation:Minimum=0
 	MinReadySeconds *int32 `json:"minReadySeconds,omitempty"`
 
 	// replicas is the number of nodes belonging to this pool.
@@ -940,6 +942,7 @@ type ClusterNetwork struct {
 type NetworkRanges struct {
 	// cidrBlocks is a list of CIDR blocks.
 	// +required
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=100
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:MaxLength=43
@@ -958,6 +961,7 @@ func (n NetworkRanges) String() string {
 // ANCHOR: ClusterStatus
 
 // ClusterStatus defines the observed state of Cluster.
+// +kubebuilder:validation:MinProperties=1
 type ClusterStatus struct {
 	// conditions represents the observations of a Cluster's current state.
 	// Known condition types are Available, InfrastructureReady, ControlPlaneInitialized, ControlPlaneAvailable, WorkersAvailable, MachinesReady
@@ -972,7 +976,7 @@ type ClusterStatus struct {
 	// initialization provides observations of the Cluster initialization process.
 	// NOTE: Fields in this struct are part of the Cluster API contract and are used to orchestrate initial Cluster provisioning.
 	// +optional
-	Initialization *ClusterInitializationStatus `json:"initialization,omitempty"`
+	Initialization ClusterInitializationStatus `json:"initialization,omitempty,omitzero"`
 
 	// controlPlane groups all the observations about Cluster's ControlPlane current state.
 	// +optional
@@ -997,6 +1001,7 @@ type ClusterStatus struct {
 
 	// observedGeneration is the latest generation observed by the controller.
 	// +optional
+	// +kubebuilder:validation:Minimum=1
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 
 	// deprecated groups all the status fields that are deprecated and will be removed when all the nested field are removed.
@@ -1006,14 +1011,13 @@ type ClusterStatus struct {
 
 // ClusterInitializationStatus provides observations of the Cluster initialization process.
 // NOTE: Fields in this struct are part of the Cluster API contract and are used to orchestrate initial Cluster provisioning.
-
-// ClusterInitializationStatus provides observations of the Cluster initialization process.
+// +kubebuilder:validation:MinProperties=1
 type ClusterInitializationStatus struct {
 	// infrastructureProvisioned is true when the infrastructure provider reports that Cluster's infrastructure is fully provisioned.
 	// NOTE: this field is part of the Cluster API contract, and it is used to orchestrate provisioning.
 	// The value of this field is never updated after provisioning is completed.
 	// +optional
-	InfrastructureProvisioned bool `json:"infrastructureProvisioned"`
+	InfrastructureProvisioned *bool `json:"infrastructureProvisioned,omitempty"`
 
 	// controlPlaneInitialized denotes when the control plane is functional enough to accept requests.
 	// This information is usually used as a signal for starting all the provisioning operations that depends on
@@ -1022,7 +1026,7 @@ type ClusterInitializationStatus struct {
 	// NOTE: this field is part of the Cluster API contract, and it is used to orchestrate provisioning.
 	// The value of this field is never updated after initialization is completed.
 	// +optional
-	ControlPlaneInitialized bool `json:"controlPlaneInitialized"`
+	ControlPlaneInitialized *bool `json:"controlPlaneInitialized,omitempty"`
 }
 
 // ClusterDeprecatedStatus groups all the status fields that are deprecated and will be removed in a future version.
@@ -1060,7 +1064,7 @@ type ClusterV1Beta1DeprecatedStatus struct {
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=10240
-	FailureMessage *string `json:"failureMessage,omitempty"`
+	FailureMessage *string `json:"failureMessage,omitempty"` //nolint:kubeapilinter // field will be removed when v1beta1 is removed
 }
 
 // ClusterControlPlaneStatus groups all the observations about control plane current state.
@@ -1137,16 +1141,19 @@ func (c *ClusterStatus) GetTypedPhase() ClusterPhase {
 // ANCHOR: APIEndpoint
 
 // APIEndpoint represents a reachable Kubernetes API endpoint.
+// +kubebuilder:validation:MinProperties=1
 type APIEndpoint struct {
 	// host is the hostname on which the API server is serving.
-	// TODO: Can't set MinLength=1 for now, because this struct is not always used in pointer fields so today we have cases where host is set to an empty string.
-	// +required
+	// +optional
+	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=512
-	Host string `json:"host"`
+	Host string `json:"host,omitempty"`
 
 	// port is the port on which the API server is serving.
-	// +required
-	Port int32 `json:"port"`
+	// +optional
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=65535
+	Port int32 `json:"port,omitempty"`
 }
 
 // IsZero returns true if both host and port are zero values.
@@ -1170,7 +1177,7 @@ func (v APIEndpoint) String() string {
 // +kubebuilder:resource:path=clusters,shortName=cl,scope=Namespaced,categories=cluster-api
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="ClusterClass",type="string",JSONPath=".spec.topology.class",description="ClusterClass of this Cluster, empty if the Cluster is not using a ClusterClass"
+// +kubebuilder:printcolumn:name="ClusterClass",type="string",JSONPath=".spec.topology.classRef.name",description="ClusterClass of this Cluster, empty if the Cluster is not using a ClusterClass"
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase",description="Cluster status such as Pending/Provisioning/Provisioned/Deleting/Failed"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp",description="Time duration since creation of Cluster"
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.topology.version",description="Kubernetes version associated with this Cluster"
@@ -1184,11 +1191,11 @@ type Cluster struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// spec is the desired state of Cluster.
-	// +optional
-	Spec ClusterSpec `json:"spec,omitempty"`
+	// +required
+	Spec ClusterSpec `json:"spec,omitempty,omitzero"`
 	// status is the observed state of Cluster.
 	// +optional
-	Status ClusterStatus `json:"status,omitempty"`
+	Status ClusterStatus `json:"status,omitempty,omitzero"`
 }
 
 // GetClassKey returns the namespaced name for the class associated with this object.
@@ -1258,7 +1265,7 @@ type FailureDomain struct {
 
 	// controlPlane determines if this failure domain is suitable for use by control plane machines.
 	// +optional
-	ControlPlane bool `json:"controlPlane,omitempty"`
+	ControlPlane *bool `json:"controlPlane,omitempty"`
 
 	// attributes is a free form map of attributes an infrastructure provider might use or require.
 	// +optional

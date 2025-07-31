@@ -17,11 +17,18 @@ limitations under the License.
 package v1beta1
 
 import (
+	"errors"
+	"fmt"
+	"maps"
+	"reflect"
+	"slices"
+	"sort"
 	"unsafe"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apimachineryconversion "k8s.io/apimachinery/pkg/conversion"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
@@ -29,28 +36,327 @@ import (
 	utilconversion "sigs.k8s.io/cluster-api/util/conversion"
 )
 
+var apiVersionGetter = func(_ schema.GroupKind) (string, error) {
+	return "", errors.New("apiVersionGetter not set")
+}
+
+func SetAPIVersionGetter(f func(gk schema.GroupKind) (string, error)) {
+	apiVersionGetter = f
+}
+
 func (src *Cluster) ConvertTo(dstRaw conversion.Hub) error {
 	dst := dstRaw.(*clusterv1.Cluster)
 
-	return Convert_v1beta1_Cluster_To_v1beta2_Cluster(src, dst, nil)
+	if err := Convert_v1beta1_Cluster_To_v1beta2_Cluster(src, dst, nil); err != nil {
+		return err
+	}
+
+	if src.Spec.InfrastructureRef != nil {
+		infraRef, err := convertToContractVersionedObjectReference(src.Spec.InfrastructureRef)
+		if err != nil {
+			return err
+		}
+		dst.Spec.InfrastructureRef = infraRef
+	}
+
+	if src.Spec.ControlPlaneRef != nil {
+		controlPlaneRef, err := convertToContractVersionedObjectReference(src.Spec.ControlPlaneRef)
+		if err != nil {
+			return err
+		}
+		dst.Spec.ControlPlaneRef = controlPlaneRef
+	}
+
+	restored := &clusterv1.Cluster{}
+	ok, err := utilconversion.UnmarshalData(src, restored)
+	if err != nil {
+		return err
+	}
+
+	// Recover intent for bool values converted to *bool.
+	clusterv1.Convert_bool_To_Pointer_bool(src.Spec.Paused, ok, restored.Spec.Paused, &dst.Spec.Paused)
+
+	initialization := clusterv1.ClusterInitializationStatus{}
+	restoredControlPlaneInitialized := restored.Status.Initialization.ControlPlaneInitialized
+	restoredInfrastructureProvisioned := restored.Status.Initialization.InfrastructureProvisioned
+	clusterv1.Convert_bool_To_Pointer_bool(src.Status.ControlPlaneReady, ok, restoredControlPlaneInitialized, &initialization.ControlPlaneInitialized)
+	clusterv1.Convert_bool_To_Pointer_bool(src.Status.InfrastructureReady, ok, restoredInfrastructureProvisioned, &initialization.InfrastructureProvisioned)
+	if !reflect.DeepEqual(initialization, clusterv1.ClusterInitializationStatus{}) {
+		dst.Status.Initialization = initialization
+	}
+	return nil
 }
 
 func (dst *Cluster) ConvertFrom(srcRaw conversion.Hub) error {
 	src := srcRaw.(*clusterv1.Cluster)
+	if err := Convert_v1beta2_Cluster_To_v1beta1_Cluster(src, dst, nil); err != nil {
+		return err
+	}
 
-	return Convert_v1beta2_Cluster_To_v1beta1_Cluster(src, dst, nil)
+	if src.Spec.InfrastructureRef != nil {
+		infraRef, err := convertToObjectReference(src.Spec.InfrastructureRef, src.Namespace)
+		if err != nil {
+			return err
+		}
+		dst.Spec.InfrastructureRef = infraRef
+	}
+
+	if src.Spec.ControlPlaneRef != nil {
+		controlPlaneRef, err := convertToObjectReference(src.Spec.ControlPlaneRef, src.Namespace)
+		if err != nil {
+			return err
+		}
+		dst.Spec.ControlPlaneRef = controlPlaneRef
+	}
+
+	if dst.Spec.Topology != nil {
+		if dst.Spec.Topology.ControlPlane.MachineHealthCheck != nil && dst.Spec.Topology.ControlPlane.MachineHealthCheck.RemediationTemplate != nil {
+			dst.Spec.Topology.ControlPlane.MachineHealthCheck.RemediationTemplate.Namespace = dst.Namespace
+		}
+		if dst.Spec.Topology.Workers != nil {
+			for _, md := range dst.Spec.Topology.Workers.MachineDeployments {
+				if md.MachineHealthCheck != nil && md.MachineHealthCheck.RemediationTemplate != nil {
+					md.MachineHealthCheck.RemediationTemplate.Namespace = dst.Namespace
+				}
+			}
+		}
+	}
+
+	dropEmptyStringsCluster(dst)
+
+	return utilconversion.MarshalData(src, dst)
 }
 
 func (src *ClusterClass) ConvertTo(dstRaw conversion.Hub) error {
 	dst := dstRaw.(*clusterv1.ClusterClass)
 
-	return Convert_v1beta1_ClusterClass_To_v1beta2_ClusterClass(src, dst, nil)
+	if err := Convert_v1beta1_ClusterClass_To_v1beta2_ClusterClass(src, dst, nil); err != nil {
+		return err
+	}
+
+	restored := &clusterv1.ClusterClass{}
+	ok, err := utilconversion.UnmarshalData(src, restored)
+	if err != nil {
+		return err
+	}
+
+	// Recover intent for bool values converted to *bool.
+	for i, patch := range dst.Spec.Patches {
+		for j, definition := range patch.Definitions {
+			var srcDefinition = &PatchDefinition{}
+			for _, p := range src.Spec.Patches {
+				if p.Name == patch.Name {
+					if len(p.Definitions) == len(patch.Definitions) {
+						srcDefinition = &p.Definitions[j]
+					}
+					break
+				}
+			}
+			if srcDefinition == nil {
+				return fmt.Errorf("definition %d for patch %s not found in source data", j, patch.Name)
+			}
+			var restoredPatchMatchControlPlane, restoredPatchMatchInfrastructureCluster *bool
+			for _, p := range restored.Spec.Patches {
+				if p.Name == patch.Name {
+					if len(p.Definitions) == len(patch.Definitions) {
+						restoredPatchMatchInfrastructureCluster = p.Definitions[j].Selector.MatchResources.InfrastructureCluster
+						restoredPatchMatchControlPlane = p.Definitions[j].Selector.MatchResources.ControlPlane
+					}
+					break
+				}
+			}
+			clusterv1.Convert_bool_To_Pointer_bool(srcDefinition.Selector.MatchResources.InfrastructureCluster, ok, restoredPatchMatchInfrastructureCluster, &definition.Selector.MatchResources.InfrastructureCluster)
+			clusterv1.Convert_bool_To_Pointer_bool(srcDefinition.Selector.MatchResources.ControlPlane, ok, restoredPatchMatchControlPlane, &definition.Selector.MatchResources.ControlPlane)
+			dst.Spec.Patches[i].Definitions[j] = definition
+		}
+	}
+
+	for i, variable := range dst.Spec.Variables {
+		var srcVariable *ClusterClassVariable
+		for _, v := range src.Spec.Variables {
+			if v.Name == variable.Name {
+				srcVariable = &v
+				break
+			}
+		}
+		if srcVariable == nil {
+			return fmt.Errorf("variable %q not found in source data", variable.Name)
+		}
+		var restoredVariableOpenAPIV3Schema *clusterv1.JSONSchemaProps
+		for _, v := range restored.Spec.Variables {
+			if v.Name == variable.Name {
+				restoredVariableOpenAPIV3Schema = &v.Schema.OpenAPIV3Schema
+				break
+			}
+		}
+		if err := restoreBoolIntentJSONSchemaProps(&srcVariable.Schema.OpenAPIV3Schema, &variable.Schema.OpenAPIV3Schema, ok, restoredVariableOpenAPIV3Schema); err != nil {
+			return err
+		}
+		dst.Spec.Variables[i] = variable
+	}
+
+	for i, variable := range dst.Status.Variables {
+		var srcVariable *ClusterClassStatusVariable
+		for _, v := range src.Status.Variables {
+			if v.Name == variable.Name {
+				srcVariable = &v
+				break
+			}
+		}
+		if srcVariable == nil {
+			return fmt.Errorf("variable %q not found in source data", variable.Name)
+		}
+		var restoredVariable *clusterv1.ClusterClassStatusVariable
+		var restoredVariableDefinitionsConflict *bool
+		for _, v := range restored.Status.Variables {
+			if v.Name == variable.Name {
+				restoredVariable = &v
+				restoredVariableDefinitionsConflict = v.DefinitionsConflict
+				break
+			}
+		}
+		clusterv1.Convert_bool_To_Pointer_bool(srcVariable.DefinitionsConflict, ok, restoredVariableDefinitionsConflict, &variable.DefinitionsConflict)
+
+		for j, definition := range variable.Definitions {
+			var srcDefinition *ClusterClassStatusVariableDefinition
+			for _, d := range srcVariable.Definitions {
+				if d.From == definition.From {
+					srcDefinition = &d
+				}
+			}
+			if srcDefinition == nil {
+				return fmt.Errorf("definition %d for variable %s not found in source data", j, variable.Name)
+			}
+			var restoredVariableOpenAPIV3Schema *clusterv1.JSONSchemaProps
+			if restoredVariable != nil {
+				for _, d := range restoredVariable.Definitions {
+					if d.From == definition.From {
+						restoredVariableOpenAPIV3Schema = &d.Schema.OpenAPIV3Schema
+					}
+				}
+			}
+			if err := restoreBoolIntentJSONSchemaProps(&srcDefinition.Schema.OpenAPIV3Schema, &definition.Schema.OpenAPIV3Schema, ok, restoredVariableOpenAPIV3Schema); err != nil {
+				return err
+			}
+			variable.Definitions[j] = definition
+		}
+		dst.Status.Variables[i] = variable
+	}
+
+	return nil
+}
+
+func restoreBoolIntentJSONSchemaProps(src *JSONSchemaProps, dst *clusterv1.JSONSchemaProps, hasRestored bool, restored *clusterv1.JSONSchemaProps) error {
+	var restoredUniqueItems, restoreExclusiveMaximum, restoredExclusiveMinimum, restoreXPreserveUnknownFields, restoredXIntOrString *bool
+	if restored != nil {
+		restoredUniqueItems = restored.UniqueItems
+		restoreExclusiveMaximum = restored.ExclusiveMaximum
+		restoredExclusiveMinimum = restored.ExclusiveMinimum
+		restoreXPreserveUnknownFields = restored.XPreserveUnknownFields
+		restoredXIntOrString = restored.XIntOrString
+	}
+	clusterv1.Convert_bool_To_Pointer_bool(src.UniqueItems, hasRestored, restoredUniqueItems, &dst.UniqueItems)
+	clusterv1.Convert_bool_To_Pointer_bool(src.ExclusiveMaximum, hasRestored, restoreExclusiveMaximum, &dst.ExclusiveMaximum)
+	clusterv1.Convert_bool_To_Pointer_bool(src.ExclusiveMinimum, hasRestored, restoredExclusiveMinimum, &dst.ExclusiveMinimum)
+	clusterv1.Convert_bool_To_Pointer_bool(src.XPreserveUnknownFields, hasRestored, restoreXPreserveUnknownFields, &dst.XPreserveUnknownFields)
+	clusterv1.Convert_bool_To_Pointer_bool(src.XIntOrString, hasRestored, restoredXIntOrString, &dst.XIntOrString)
+
+	for name, property := range dst.Properties {
+		srcProperty, ok := src.Properties[name]
+		if !ok {
+			return fmt.Errorf("property %s not found in source data", name)
+		}
+		var restoredPropertyOpenAPIV3Schema *clusterv1.JSONSchemaProps
+		if restored != nil {
+			if v, ok := restored.Properties[name]; ok {
+				restoredPropertyOpenAPIV3Schema = &v
+			}
+		}
+		if err := restoreBoolIntentJSONSchemaProps(&srcProperty, &property, hasRestored, restoredPropertyOpenAPIV3Schema); err != nil {
+			return err
+		}
+		dst.Properties[name] = property
+	}
+	if src.AdditionalProperties != nil {
+		var restoredAdditionalPropertiesOpenAPIV3Schema *clusterv1.JSONSchemaProps
+		if restored != nil {
+			restoredAdditionalPropertiesOpenAPIV3Schema = restored.AdditionalProperties
+		}
+		if err := restoreBoolIntentJSONSchemaProps(src.AdditionalProperties, dst.AdditionalProperties, hasRestored, restoredAdditionalPropertiesOpenAPIV3Schema); err != nil {
+			return err
+		}
+	}
+	if src.Items != nil {
+		var restoreItemsOpenAPIV3Schema *clusterv1.JSONSchemaProps
+		if restored != nil {
+			restoreItemsOpenAPIV3Schema = restored.Items
+		}
+		if err := restoreBoolIntentJSONSchemaProps(src.Items, dst.Items, hasRestored, restoreItemsOpenAPIV3Schema); err != nil {
+			return err
+		}
+	}
+	for i, value := range dst.AllOf {
+		srcValue := src.AllOf[i]
+		var restoredValueOpenAPIV3Schema *clusterv1.JSONSchemaProps
+		if restored != nil && len(src.AllOf) == len(dst.AllOf) {
+			restoredValueOpenAPIV3Schema = &restored.AllOf[i]
+		}
+		if err := restoreBoolIntentJSONSchemaProps(&srcValue, &value, hasRestored, restoredValueOpenAPIV3Schema); err != nil {
+			return err
+		}
+		dst.AllOf[i] = value
+	}
+	for i, value := range dst.OneOf {
+		srcValue := src.OneOf[i]
+		var restoredValueOpenAPIV3Schema *clusterv1.JSONSchemaProps
+		if restored != nil && len(src.OneOf) == len(dst.OneOf) {
+			restoredValueOpenAPIV3Schema = &restored.OneOf[i]
+		}
+		if err := restoreBoolIntentJSONSchemaProps(&srcValue, &value, hasRestored, restoredValueOpenAPIV3Schema); err != nil {
+			return err
+		}
+		dst.OneOf[i] = value
+	}
+	for i, value := range dst.AnyOf {
+		srcValue := src.AnyOf[i]
+		var restoredValueOpenAPIV3Schema *clusterv1.JSONSchemaProps
+		if restored != nil && len(src.AnyOf) == len(dst.AnyOf) {
+			restoredValueOpenAPIV3Schema = &restored.AnyOf[i]
+		}
+		if err := restoreBoolIntentJSONSchemaProps(&srcValue, &value, hasRestored, restoredValueOpenAPIV3Schema); err != nil {
+			return err
+		}
+		dst.AnyOf[i] = value
+	}
+	if src.Not != nil {
+		var restoredNotOpenAPIV3Schema *clusterv1.JSONSchemaProps
+		if restored != nil {
+			restoredNotOpenAPIV3Schema = restored.Not
+		}
+		if err := restoreBoolIntentJSONSchemaProps(src.Not, dst.Not, hasRestored, restoredNotOpenAPIV3Schema); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (dst *ClusterClass) ConvertFrom(srcRaw conversion.Hub) error {
 	src := srcRaw.(*clusterv1.ClusterClass)
+	if err := Convert_v1beta2_ClusterClass_To_v1beta1_ClusterClass(src, dst, nil); err != nil {
+		return err
+	}
 
-	return Convert_v1beta2_ClusterClass_To_v1beta1_ClusterClass(src, dst, nil)
+	if dst.Spec.ControlPlane.MachineHealthCheck != nil && dst.Spec.ControlPlane.MachineHealthCheck.RemediationTemplate != nil {
+		dst.Spec.ControlPlane.MachineHealthCheck.RemediationTemplate.Namespace = dst.Namespace
+	}
+	for _, md := range dst.Spec.Workers.MachineDeployments {
+		if md.MachineHealthCheck != nil && md.MachineHealthCheck.RemediationTemplate != nil {
+			md.MachineHealthCheck.RemediationTemplate.Namespace = dst.Namespace
+		}
+	}
+	dropEmptyStringsClusterClass(dst)
+
+	return utilconversion.MarshalData(src, dst)
 }
 
 func (src *Machine) ConvertTo(dstRaw conversion.Hub) error {
@@ -60,12 +366,30 @@ func (src *Machine) ConvertTo(dstRaw conversion.Hub) error {
 		return err
 	}
 
-	restored := &clusterv1.Machine{}
-	if ok, err := utilconversion.UnmarshalData(src, restored); err != nil || !ok {
+	if err := convertMachineSpecToContractVersionedObjectReference(&src.Spec, &dst.Spec); err != nil {
 		return err
 	}
 
-	dst.Spec.MinReadySeconds = restored.Spec.MinReadySeconds
+	restored := &clusterv1.Machine{}
+	ok, err := utilconversion.UnmarshalData(src, restored)
+	if err != nil {
+		return err
+	}
+
+	// Recover intent for bool values converted to *bool.
+	initialization := clusterv1.MachineInitializationStatus{}
+	restoredBootstrapDataSecretCreated := restored.Status.Initialization.BootstrapDataSecretCreated
+	restoredInfrastructureProvisioned := restored.Status.Initialization.InfrastructureProvisioned
+	clusterv1.Convert_bool_To_Pointer_bool(src.Status.BootstrapReady, ok, restoredBootstrapDataSecretCreated, &initialization.BootstrapDataSecretCreated)
+	clusterv1.Convert_bool_To_Pointer_bool(src.Status.InfrastructureReady, ok, restoredInfrastructureProvisioned, &initialization.InfrastructureProvisioned)
+	if !reflect.DeepEqual(initialization, clusterv1.MachineInitializationStatus{}) {
+		dst.Status.Initialization = initialization
+	}
+
+	// Recover other values.
+	if ok {
+		dst.Spec.MinReadySeconds = restored.Spec.MinReadySeconds
+	}
 
 	return nil
 }
@@ -77,6 +401,12 @@ func (dst *Machine) ConvertFrom(srcRaw conversion.Hub) error {
 		return err
 	}
 
+	if err := convertMachineSpecToObjectReference(&src.Spec, &dst.Spec, src.Namespace); err != nil {
+		return err
+	}
+
+	dropEmptyStringsMachineSpec(&dst.Spec)
+
 	return utilconversion.MarshalData(src, dst)
 }
 
@@ -84,6 +414,10 @@ func (src *MachineSet) ConvertTo(dstRaw conversion.Hub) error {
 	dst := dstRaw.(*clusterv1.MachineSet)
 
 	if err := Convert_v1beta1_MachineSet_To_v1beta2_MachineSet(src, dst, nil); err != nil {
+		return err
+	}
+
+	if err := convertMachineSpecToContractVersionedObjectReference(&src.Spec.Template.Spec, &dst.Spec.Template.Spec); err != nil {
 		return err
 	}
 
@@ -103,8 +437,13 @@ func (dst *MachineSet) ConvertFrom(srcRaw conversion.Hub) error {
 		return err
 	}
 
+	if err := convertMachineSpecToObjectReference(&src.Spec.Template.Spec, &dst.Spec.Template.Spec, src.Namespace); err != nil {
+		return err
+	}
+
 	dst.Spec.MinReadySeconds = ptr.Deref(src.Spec.Template.Spec.MinReadySeconds, 0)
 
+	dropEmptyStringsMachineSpec(&dst.Spec.Template.Spec)
 	return nil
 }
 
@@ -115,7 +454,20 @@ func (src *MachineDeployment) ConvertTo(dstRaw conversion.Hub) error {
 		return err
 	}
 
+	if err := convertMachineSpecToContractVersionedObjectReference(&src.Spec.Template.Spec, &dst.Spec.Template.Spec); err != nil {
+		return err
+	}
+
 	dst.Spec.Template.Spec.MinReadySeconds = src.Spec.MinReadySeconds
+
+	restored := &clusterv1.MachineDeployment{}
+	ok, err := utilconversion.UnmarshalData(src, restored)
+	if err != nil {
+		return err
+	}
+
+	// Recover intent for bool values converted to *bool.
+	clusterv1.Convert_bool_To_Pointer_bool(src.Spec.Paused, ok, restored.Spec.Paused, &dst.Spec.Paused)
 
 	return nil
 }
@@ -127,21 +479,51 @@ func (dst *MachineDeployment) ConvertFrom(srcRaw conversion.Hub) error {
 		return err
 	}
 
+	if err := convertMachineSpecToObjectReference(&src.Spec.Template.Spec, &dst.Spec.Template.Spec, src.Namespace); err != nil {
+		return err
+	}
+
 	dst.Spec.MinReadySeconds = src.Spec.Template.Spec.MinReadySeconds
 
-	return nil
+	dropEmptyStringsMachineSpec(&dst.Spec.Template.Spec)
+
+	return utilconversion.MarshalData(src, dst)
 }
 
 func (src *MachineHealthCheck) ConvertTo(dstRaw conversion.Hub) error {
 	dst := dstRaw.(*clusterv1.MachineHealthCheck)
 
-	return Convert_v1beta1_MachineHealthCheck_To_v1beta2_MachineHealthCheck(src, dst, nil)
+	if err := Convert_v1beta1_MachineHealthCheck_To_v1beta2_MachineHealthCheck(src, dst, nil); err != nil {
+		return err
+	}
+
+	// Manually restore data.
+	restored := &clusterv1.MachineHealthCheck{}
+	ok, err := utilconversion.UnmarshalData(src, restored)
+	if err != nil {
+		return err
+	}
+
+	clusterv1.Convert_int32_To_Pointer_int32(src.Status.ExpectedMachines, ok, restored.Status.ExpectedMachines, &dst.Status.ExpectedMachines)
+	clusterv1.Convert_int32_To_Pointer_int32(src.Status.CurrentHealthy, ok, restored.Status.CurrentHealthy, &dst.Status.CurrentHealthy)
+	clusterv1.Convert_int32_To_Pointer_int32(src.Status.RemediationsAllowed, ok, restored.Status.RemediationsAllowed, &dst.Status.RemediationsAllowed)
+
+	return nil
 }
 
 func (dst *MachineHealthCheck) ConvertFrom(srcRaw conversion.Hub) error {
 	src := srcRaw.(*clusterv1.MachineHealthCheck)
+	if err := Convert_v1beta2_MachineHealthCheck_To_v1beta1_MachineHealthCheck(src, dst, nil); err != nil {
+		return err
+	}
 
-	return Convert_v1beta2_MachineHealthCheck_To_v1beta1_MachineHealthCheck(src, dst, nil)
+	if dst.Spec.RemediationTemplate != nil {
+		dst.Spec.RemediationTemplate.Namespace = src.Namespace
+	}
+
+	dropEmptyStringsMachineHealthCheck(dst)
+
+	return utilconversion.MarshalData(src, dst)
 }
 
 func (src *MachinePool) ConvertTo(dstRaw conversion.Hub) error {
@@ -151,7 +533,27 @@ func (src *MachinePool) ConvertTo(dstRaw conversion.Hub) error {
 		return err
 	}
 
+	if err := convertMachineSpecToContractVersionedObjectReference(&src.Spec.Template.Spec, &dst.Spec.Template.Spec); err != nil {
+		return err
+	}
+
 	dst.Spec.Template.Spec.MinReadySeconds = src.Spec.MinReadySeconds
+
+	restored := &clusterv1.MachinePool{}
+	ok, err := utilconversion.UnmarshalData(src, restored)
+	if err != nil {
+		return err
+	}
+
+	// Recover intent for bool values converted to *bool.
+	initialization := clusterv1.MachinePoolInitializationStatus{}
+	restoredBootstrapDataSecretCreated := restored.Status.Initialization.BootstrapDataSecretCreated
+	restoredInfrastructureProvisioned := restored.Status.Initialization.InfrastructureProvisioned
+	clusterv1.Convert_bool_To_Pointer_bool(src.Status.BootstrapReady, ok, restoredBootstrapDataSecretCreated, &initialization.BootstrapDataSecretCreated)
+	clusterv1.Convert_bool_To_Pointer_bool(src.Status.InfrastructureReady, ok, restoredInfrastructureProvisioned, &initialization.InfrastructureProvisioned)
+	if !reflect.DeepEqual(initialization, clusterv1.MachinePoolInitializationStatus{}) {
+		dst.Status.Initialization = initialization
+	}
 
 	return nil
 }
@@ -163,9 +565,15 @@ func (dst *MachinePool) ConvertFrom(srcRaw conversion.Hub) error {
 		return err
 	}
 
+	if err := convertMachineSpecToObjectReference(&src.Spec.Template.Spec, &dst.Spec.Template.Spec, src.Namespace); err != nil {
+		return err
+	}
+
 	dst.Spec.MinReadySeconds = src.Spec.Template.Spec.MinReadySeconds
 
-	return nil
+	dropEmptyStringsMachineSpec(&dst.Spec.Template.Spec)
+
+	return utilconversion.MarshalData(src, dst)
 }
 
 func (src *MachineDrainRule) ConvertTo(dstRaw conversion.Hub) error {
@@ -217,8 +625,12 @@ func Convert_v1beta2_ClusterClassSpec_To_v1beta1_ClusterClassSpec(in *clusterv1.
 	}
 
 	if in.Infrastructure.NamingStrategy != nil {
+		var template *string
+		if in.Infrastructure.NamingStrategy.Template != "" {
+			template = ptr.To(in.Infrastructure.NamingStrategy.Template)
+		}
 		out.InfrastructureNamingStrategy = &InfrastructureNamingStrategy{
-			Template: in.Infrastructure.NamingStrategy.Template,
+			Template: template,
 		}
 	}
 	return nil
@@ -229,7 +641,8 @@ func Convert_v1beta2_InfrastructureClass_To_v1beta1_LocalObjectTemplate(in *clus
 		return nil
 	}
 
-	return Convert_v1beta2_ClusterClassTemplate_To_v1beta1_LocalObjectTemplate(&in.ClusterClassTemplate, out, s)
+	Convert_v1beta2_ClusterClassTemplateReference_To_v1beta1_LocalObjectTemplate(&in.TemplateRef, out, s)
+	return nil
 }
 
 func Convert_v1beta1_ClusterClassSpec_To_v1beta2_ClusterClassSpec(in *ClusterClassSpec, out *clusterv1.ClusterClassSpec, s apimachineryconversion.Scope) error {
@@ -239,7 +652,7 @@ func Convert_v1beta1_ClusterClassSpec_To_v1beta2_ClusterClassSpec(in *ClusterCla
 
 	if in.InfrastructureNamingStrategy != nil {
 		out.Infrastructure.NamingStrategy = &clusterv1.InfrastructureClassNamingStrategy{
-			Template: in.InfrastructureNamingStrategy.Template,
+			Template: ptr.Deref(in.InfrastructureNamingStrategy.Template, ""),
 		}
 	}
 	return nil
@@ -284,7 +697,8 @@ func Convert_v1beta1_LocalObjectTemplate_To_v1beta2_InfrastructureClass(in *Loca
 		return nil
 	}
 
-	return Convert_v1beta1_LocalObjectTemplate_To_v1beta2_ClusterClassTemplate(in, &out.ClusterClassTemplate, s)
+	convert_v1beta1_LocalObjectTemplate_To_v1beta2_ClusterClassTemplateReference(in, &out.TemplateRef, s)
+	return nil
 }
 
 func Convert_v1beta1_ControlPlaneClass_To_v1beta2_ControlPlaneClass(in *ControlPlaneClass, out *clusterv1.ControlPlaneClass, s apimachineryconversion.Scope) error {
@@ -294,7 +708,8 @@ func Convert_v1beta1_ControlPlaneClass_To_v1beta2_ControlPlaneClass(in *ControlP
 	out.NodeDrainTimeoutSeconds = clusterv1.ConvertToSeconds(in.NodeDrainTimeout)
 	out.NodeVolumeDetachTimeoutSeconds = clusterv1.ConvertToSeconds(in.NodeVolumeDetachTimeout)
 	out.NodeDeletionTimeoutSeconds = clusterv1.ConvertToSeconds(in.NodeDeletionTimeout)
-	return Convert_v1beta1_LocalObjectTemplate_To_v1beta2_ClusterClassTemplate(&in.LocalObjectTemplate, &out.ClusterClassTemplate, s)
+	convert_v1beta1_LocalObjectTemplate_To_v1beta2_ClusterClassTemplateReference(&in.LocalObjectTemplate, &out.TemplateRef, s)
+	return nil
 }
 
 func Convert_v1beta2_ControlPlaneClass_To_v1beta1_ControlPlaneClass(in *clusterv1.ControlPlaneClass, out *ControlPlaneClass, s apimachineryconversion.Scope) error {
@@ -304,7 +719,8 @@ func Convert_v1beta2_ControlPlaneClass_To_v1beta1_ControlPlaneClass(in *clusterv
 	out.NodeDrainTimeout = clusterv1.ConvertFromSeconds(in.NodeDrainTimeoutSeconds)
 	out.NodeVolumeDetachTimeout = clusterv1.ConvertFromSeconds(in.NodeVolumeDetachTimeoutSeconds)
 	out.NodeDeletionTimeout = clusterv1.ConvertFromSeconds(in.NodeDeletionTimeoutSeconds)
-	return Convert_v1beta2_ClusterClassTemplate_To_v1beta1_LocalObjectTemplate(&in.ClusterClassTemplate, &out.LocalObjectTemplate, s)
+	Convert_v1beta2_ClusterClassTemplateReference_To_v1beta1_LocalObjectTemplate(&in.TemplateRef, &out.LocalObjectTemplate, s)
+	return nil
 }
 
 func Convert_v1beta1_ControlPlaneTopology_To_v1beta2_ControlPlaneTopology(in *ControlPlaneTopology, out *clusterv1.ControlPlaneTopology, s apimachineryconversion.Scope) error {
@@ -492,17 +908,15 @@ func Convert_v1beta2_ClusterStatus_To_v1beta1_ClusterStatus(in *clusterv1.Cluste
 	}
 
 	// Move initialization to old fields
-	if in.Initialization != nil {
-		out.ControlPlaneReady = in.Initialization.ControlPlaneInitialized
-		out.InfrastructureReady = in.Initialization.InfrastructureProvisioned
-	}
+	out.ControlPlaneReady = ptr.Deref(in.Initialization.ControlPlaneInitialized, false)
+	out.InfrastructureReady = ptr.Deref(in.Initialization.InfrastructureProvisioned, false)
 
 	// Move FailureDomains
 	if in.FailureDomains != nil {
 		out.FailureDomains = FailureDomains{}
 		for _, fd := range in.FailureDomains {
 			out.FailureDomains[fd.Name] = FailureDomainSpec{
-				ControlPlane: fd.ControlPlane,
+				ControlPlane: ptr.Deref(fd.ControlPlane, false),
 				Attributes:   fd.Attributes,
 			}
 		}
@@ -577,22 +991,18 @@ func Convert_v1beta1_ClusterStatus_To_v1beta2_ClusterStatus(in *ClusterStatus, o
 		}
 	}
 
-	// Move ControlPlaneReady and InfrastructureReady to Initialization
-	if in.ControlPlaneReady || in.InfrastructureReady {
-		if out.Initialization == nil {
-			out.Initialization = &clusterv1.ClusterInitializationStatus{}
-		}
-		out.Initialization.ControlPlaneInitialized = in.ControlPlaneReady
-		out.Initialization.InfrastructureProvisioned = in.InfrastructureReady
-	}
+	// Move ControlPlaneReady and InfrastructureReady to Initialization is implemented in ConvertTo.
 
 	// Move FailureDomains
 	if in.FailureDomains != nil {
 		out.FailureDomains = []clusterv1.FailureDomain{}
-		for name, fd := range in.FailureDomains {
+		domainNames := slices.Collect(maps.Keys(in.FailureDomains))
+		sort.Strings(domainNames)
+		for _, name := range domainNames {
+			fd := in.FailureDomains[name]
 			out.FailureDomains = append(out.FailureDomains, clusterv1.FailureDomain{
 				Name:         name,
-				ControlPlane: fd.ControlPlane,
+				ControlPlane: ptr.To(fd.ControlPlane),
 				Attributes:   fd.Attributes,
 			})
 		}
@@ -895,10 +1305,8 @@ func Convert_v1beta2_MachineStatus_To_v1beta1_MachineStatus(in *clusterv1.Machin
 	}
 
 	// Move initialization to old fields
-	if in.Initialization != nil {
-		out.BootstrapReady = in.Initialization.BootstrapDataSecretCreated
-		out.InfrastructureReady = in.Initialization.InfrastructureProvisioned
-	}
+	out.BootstrapReady = ptr.Deref(in.Initialization.BootstrapDataSecretCreated, false)
+	out.InfrastructureReady = ptr.Deref(in.Initialization.InfrastructureProvisioned, false)
 
 	// Move new conditions (v1beta2) to the v1beta2 field.
 	if in.Conditions == nil {
@@ -923,14 +1331,7 @@ func Convert_v1beta1_MachineStatus_To_v1beta2_MachineStatus(in *MachineStatus, o
 		out.Conditions = in.V1Beta2.Conditions
 	}
 
-	// Move BootstrapReady and InfrastructureReady to Initialization
-	if in.BootstrapReady || in.InfrastructureReady {
-		if out.Initialization == nil {
-			out.Initialization = &clusterv1.MachineInitializationStatus{}
-		}
-		out.Initialization.BootstrapDataSecretCreated = in.BootstrapReady
-		out.Initialization.InfrastructureProvisioned = in.InfrastructureReady
-	}
+	// Move BootstrapReady and InfrastructureReady to Initialization is implemented in ConvertTo.
 
 	// Move legacy conditions (v1beta1), failureReason and failureMessage to the deprecated field.
 	if in.Conditions == nil && in.FailureReason == nil && in.FailureMessage == nil {
@@ -1022,10 +1423,8 @@ func Convert_v1beta2_MachinePoolStatus_To_v1beta1_MachinePoolStatus(in *clusterv
 	}
 
 	// Move initialization to old fields
-	if in.Initialization != nil {
-		out.BootstrapReady = in.Initialization.BootstrapDataSecretCreated
-		out.InfrastructureReady = in.Initialization.InfrastructureProvisioned
-	}
+	out.BootstrapReady = ptr.Deref(in.Initialization.BootstrapDataSecretCreated, false)
+	out.InfrastructureReady = ptr.Deref(in.Initialization.InfrastructureProvisioned, false)
 
 	// Move new conditions (v1beta2) and replica counters to the v1beta2 field.
 	if in.Conditions == nil && in.ReadyReplicas == nil && in.AvailableReplicas == nil && in.UpToDateReplicas == nil {
@@ -1061,14 +1460,7 @@ func Convert_v1beta1_MachinePoolStatus_To_v1beta2_MachinePoolStatus(in *MachineP
 		out.UpToDateReplicas = in.V1Beta2.UpToDateReplicas
 	}
 
-	// Move BootstrapReady and InfrastructureReady to Initialization
-	if in.BootstrapReady || in.InfrastructureReady {
-		if out.Initialization == nil {
-			out.Initialization = &clusterv1.MachinePoolInitializationStatus{}
-		}
-		out.Initialization.BootstrapDataSecretCreated = in.BootstrapReady
-		out.Initialization.InfrastructureProvisioned = in.InfrastructureReady
-	}
+	// Move BootstrapReady and InfrastructureReady to Initialization is implemented in ConvertTo.
 
 	// Move legacy conditions (v1beta1), failureReason, failureMessage and replica counters to the deprecated field.
 	if out.Deprecated == nil {
@@ -1125,8 +1517,8 @@ func Convert_v1beta1_ExternalPatchDefinition_To_v1beta2_ExternalPatchDefinition(
 		return err
 	}
 
-	out.GeneratePatchesExtension = in.GenerateExtension
-	out.ValidateTopologyExtension = in.ValidateExtension
+	out.GeneratePatchesExtension = ptr.Deref(in.GenerateExtension, "")
+	out.ValidateTopologyExtension = ptr.Deref(in.ValidateExtension, "")
 	return nil
 }
 
@@ -1135,8 +1527,36 @@ func Convert_v1beta2_ExternalPatchDefinition_To_v1beta1_ExternalPatchDefinition(
 		return err
 	}
 
-	out.GenerateExtension = in.GeneratePatchesExtension
-	out.ValidateExtension = in.ValidateTopologyExtension
+	if in.GeneratePatchesExtension != "" {
+		out.GenerateExtension = ptr.To(in.GeneratePatchesExtension)
+	}
+	if in.ValidateTopologyExtension != "" {
+		out.ValidateExtension = ptr.To(in.ValidateTopologyExtension)
+	}
+	return nil
+}
+
+func Convert_v1_ObjectReference_To_v1beta2_MachineHealthCheckRemediationTemplateReference(in *corev1.ObjectReference, out *clusterv1.MachineHealthCheckRemediationTemplateReference, _ apimachineryconversion.Scope) error {
+	out.Name = in.Name
+	out.Kind = in.Kind
+	out.APIVersion = in.APIVersion
+	return nil
+}
+
+func Convert_v1beta2_MachineHealthCheckRemediationTemplateReference_To_v1_ObjectReference(in *clusterv1.MachineHealthCheckRemediationTemplateReference, out *corev1.ObjectReference, _ apimachineryconversion.Scope) error {
+	out.Name = in.Name
+	out.Kind = in.Kind
+	out.APIVersion = in.APIVersion
+	return nil
+}
+
+func Convert_v1_ObjectReference_To_v1beta2_ContractVersionedObjectReference(_ *corev1.ObjectReference, _ *clusterv1.ContractVersionedObjectReference, _ apimachineryconversion.Scope) error {
+	// This is implemented in ConvertTo/ConvertFrom as we have all necessary information available there.
+	return nil
+}
+
+func Convert_v1beta2_ContractVersionedObjectReference_To_v1_ObjectReference(_ *clusterv1.ContractVersionedObjectReference, _ *corev1.ObjectReference, _ apimachineryconversion.Scope) error {
+	// This is implemented in ConvertTo/ConvertFrom as we have all necessary information available there.
 	return nil
 }
 
@@ -1152,28 +1572,258 @@ func Convert_v1beta2_MachineNodeReference_To_v1_ObjectReference(in *clusterv1.Ma
 	return nil
 }
 
-func Convert_v1beta1_LocalObjectTemplate_To_v1beta2_ClusterClassTemplate(in *LocalObjectTemplate, out *clusterv1.ClusterClassTemplate, _ apimachineryconversion.Scope) error {
-	if in.Ref == nil {
-		return nil
+func Convert_v1beta1_LocalObjectTemplate_To_v1beta2_ControlPlaneClassMachineInfrastructureTemplate(in *LocalObjectTemplate, out *clusterv1.ControlPlaneClassMachineInfrastructureTemplate, s apimachineryconversion.Scope) error {
+	convert_v1beta1_LocalObjectTemplate_To_v1beta2_ClusterClassTemplateReference(in, &out.TemplateRef, s)
+	return nil
+}
+
+func Convert_v1beta1_LocalObjectTemplate_To_v1beta2_MachineDeploymentClassBootstrapTemplate(in *LocalObjectTemplate, out *clusterv1.MachineDeploymentClassBootstrapTemplate, s apimachineryconversion.Scope) error {
+	convert_v1beta1_LocalObjectTemplate_To_v1beta2_ClusterClassTemplateReference(in, &out.TemplateRef, s)
+	return nil
+}
+
+func Convert_v1beta1_LocalObjectTemplate_To_v1beta2_MachineDeploymentClassInfrastructureTemplate(in *LocalObjectTemplate, out *clusterv1.MachineDeploymentClassInfrastructureTemplate, s apimachineryconversion.Scope) error {
+	convert_v1beta1_LocalObjectTemplate_To_v1beta2_ClusterClassTemplateReference(in, &out.TemplateRef, s)
+	return nil
+}
+
+func Convert_v1beta1_LocalObjectTemplate_To_v1beta2_MachinePoolClassBootstrapTemplate(in *LocalObjectTemplate, out *clusterv1.MachinePoolClassBootstrapTemplate, s apimachineryconversion.Scope) error {
+	convert_v1beta1_LocalObjectTemplate_To_v1beta2_ClusterClassTemplateReference(in, &out.TemplateRef, s)
+	return nil
+}
+
+func Convert_v1beta1_LocalObjectTemplate_To_v1beta2_MachinePoolClassInfrastructureTemplate(in *LocalObjectTemplate, out *clusterv1.MachinePoolClassInfrastructureTemplate, s apimachineryconversion.Scope) error {
+	convert_v1beta1_LocalObjectTemplate_To_v1beta2_ClusterClassTemplateReference(in, &out.TemplateRef, s)
+	return nil
+}
+
+func convert_v1beta1_LocalObjectTemplate_To_v1beta2_ClusterClassTemplateReference(in *LocalObjectTemplate, out *clusterv1.ClusterClassTemplateReference, _ apimachineryconversion.Scope) {
+	if in == nil || in.Ref == nil {
+		return
 	}
 
-	out.Ref = &clusterv1.ClusterClassTemplateReference{
+	*out = clusterv1.ClusterClassTemplateReference{
 		Kind:       in.Ref.Kind,
 		Name:       in.Ref.Name,
 		APIVersion: in.Ref.APIVersion,
+	}
+}
+
+func Convert_v1beta2_ControlPlaneClassMachineInfrastructureTemplate_To_v1beta1_LocalObjectTemplate(in *clusterv1.ControlPlaneClassMachineInfrastructureTemplate, out *LocalObjectTemplate, s apimachineryconversion.Scope) error {
+	Convert_v1beta2_ClusterClassTemplateReference_To_v1beta1_LocalObjectTemplate(&in.TemplateRef, out, s)
+	return nil
+}
+
+func Convert_v1beta2_MachineDeploymentClassBootstrapTemplate_To_v1beta1_LocalObjectTemplate(in *clusterv1.MachineDeploymentClassBootstrapTemplate, out *LocalObjectTemplate, s apimachineryconversion.Scope) error {
+	Convert_v1beta2_ClusterClassTemplateReference_To_v1beta1_LocalObjectTemplate(&in.TemplateRef, out, s)
+	return nil
+}
+
+func Convert_v1beta2_MachineDeploymentClassInfrastructureTemplate_To_v1beta1_LocalObjectTemplate(in *clusterv1.MachineDeploymentClassInfrastructureTemplate, out *LocalObjectTemplate, s apimachineryconversion.Scope) error {
+	Convert_v1beta2_ClusterClassTemplateReference_To_v1beta1_LocalObjectTemplate(&in.TemplateRef, out, s)
+	return nil
+}
+
+func Convert_v1beta2_MachinePoolClassBootstrapTemplate_To_v1beta1_LocalObjectTemplate(in *clusterv1.MachinePoolClassBootstrapTemplate, out *LocalObjectTemplate, s apimachineryconversion.Scope) error {
+	Convert_v1beta2_ClusterClassTemplateReference_To_v1beta1_LocalObjectTemplate(&in.TemplateRef, out, s)
+	return nil
+}
+
+func Convert_v1beta2_MachinePoolClassInfrastructureTemplate_To_v1beta1_LocalObjectTemplate(in *clusterv1.MachinePoolClassInfrastructureTemplate, out *LocalObjectTemplate, s apimachineryconversion.Scope) error {
+	Convert_v1beta2_ClusterClassTemplateReference_To_v1beta1_LocalObjectTemplate(&in.TemplateRef, out, s)
+	return nil
+}
+
+func Convert_v1beta2_ClusterClassTemplateReference_To_v1beta1_LocalObjectTemplate(in *clusterv1.ClusterClassTemplateReference, out *LocalObjectTemplate, _ apimachineryconversion.Scope) {
+	if in == nil {
+		return
+	}
+
+	out.Ref = &corev1.ObjectReference{
+		Kind:       in.Kind,
+		Name:       in.Name,
+		APIVersion: in.APIVersion,
+	}
+}
+
+func Convert_v1beta1_MachineRollingUpdateDeployment_To_v1beta2_MachineRollingUpdateDeployment(in *MachineRollingUpdateDeployment, out *clusterv1.MachineRollingUpdateDeployment, s apimachineryconversion.Scope) error {
+	if err := autoConvert_v1beta1_MachineRollingUpdateDeployment_To_v1beta2_MachineRollingUpdateDeployment(in, out, s); err != nil {
+		return err
+	}
+	if in.DeletePolicy != nil {
+		out.DeletePolicy = clusterv1.MachineSetDeletePolicy(*in.DeletePolicy)
 	}
 	return nil
 }
 
-func Convert_v1beta2_ClusterClassTemplate_To_v1beta1_LocalObjectTemplate(in *clusterv1.ClusterClassTemplate, out *LocalObjectTemplate, _ apimachineryconversion.Scope) error {
-	if in.Ref == nil {
-		return nil
+func Convert_v1beta2_MachineRollingUpdateDeployment_To_v1beta1_MachineRollingUpdateDeployment(in *clusterv1.MachineRollingUpdateDeployment, out *MachineRollingUpdateDeployment, s apimachineryconversion.Scope) error {
+	if err := autoConvert_v1beta2_MachineRollingUpdateDeployment_To_v1beta1_MachineRollingUpdateDeployment(in, out, s); err != nil {
+		return err
 	}
-
-	out.Ref = &corev1.ObjectReference{
-		Kind:       in.Ref.Kind,
-		Name:       in.Ref.Name,
-		APIVersion: in.Ref.APIVersion,
+	if in.DeletePolicy != "" {
+		out.DeletePolicy = ptr.To(string(in.DeletePolicy))
 	}
 	return nil
+}
+
+func convertMachineSpecToContractVersionedObjectReference(src *MachineSpec, dst *clusterv1.MachineSpec) error {
+	infraRef, err := convertToContractVersionedObjectReference(&src.InfrastructureRef)
+	if err != nil {
+		return err
+	}
+	dst.InfrastructureRef = *infraRef
+
+	if src.Bootstrap.ConfigRef != nil {
+		bootstrapRef, err := convertToContractVersionedObjectReference(src.Bootstrap.ConfigRef)
+		if err != nil {
+			return err
+		}
+		dst.Bootstrap.ConfigRef = bootstrapRef
+	}
+
+	return nil
+}
+
+func convertMachineSpecToObjectReference(src *clusterv1.MachineSpec, dst *MachineSpec, namespace string) error {
+	infraRef, err := convertToObjectReference(&src.InfrastructureRef, namespace)
+	if err != nil {
+		return err
+	}
+	dst.InfrastructureRef = *infraRef
+
+	if src.Bootstrap.ConfigRef != nil {
+		bootstrapRef, err := convertToObjectReference(src.Bootstrap.ConfigRef, namespace)
+		if err != nil {
+			return err
+		}
+		dst.Bootstrap.ConfigRef = bootstrapRef
+	}
+
+	return nil
+}
+
+func convertToContractVersionedObjectReference(ref *corev1.ObjectReference) (*clusterv1.ContractVersionedObjectReference, error) {
+	var apiGroup string
+	if ref.APIVersion != "" {
+		gv, err := schema.ParseGroupVersion(ref.APIVersion)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert object: failed to parse apiVersion: %v", err)
+		}
+		apiGroup = gv.Group
+	}
+	return &clusterv1.ContractVersionedObjectReference{
+		APIGroup: apiGroup,
+		Kind:     ref.Kind,
+		Name:     ref.Name,
+	}, nil
+}
+
+func convertToObjectReference(ref *clusterv1.ContractVersionedObjectReference, namespace string) (*corev1.ObjectReference, error) {
+	apiVersion, err := apiVersionGetter(schema.GroupKind{
+		Group: ref.APIGroup,
+		Kind:  ref.Kind,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert object: %v", err)
+	}
+	return &corev1.ObjectReference{
+		APIVersion: apiVersion,
+		Kind:       ref.Kind,
+		Namespace:  namespace,
+		Name:       ref.Name,
+	}, nil
+}
+
+func Convert_v1beta1_JSONSchemaProps_To_v1beta2_JSONSchemaProps(in *JSONSchemaProps, out *clusterv1.JSONSchemaProps, s apimachineryconversion.Scope) error {
+	// This conversion func is required due to a bug in conversion gen that does not recognize the changes for converting bool to *bool.
+	// By implementing this func, autoConvert_v1beta1_JSONSchemaProps_To_v1beta2_JSONSchemaProps is generated properly.
+	return autoConvert_v1beta1_JSONSchemaProps_To_v1beta2_JSONSchemaProps(in, out, s)
+}
+
+func dropEmptyStringsCluster(dst *Cluster) {
+	if dst.Spec.Topology != nil {
+		if dst.Spec.Topology.ControlPlane.MachineHealthCheck != nil {
+			dropEmptyString(&dst.Spec.Topology.ControlPlane.MachineHealthCheck.UnhealthyRange)
+		}
+
+		if dst.Spec.Topology.Workers != nil {
+			for i, md := range dst.Spec.Topology.Workers.MachineDeployments {
+				dropEmptyString(&md.FailureDomain)
+				if md.MachineHealthCheck != nil {
+					dropEmptyString(&md.MachineHealthCheck.UnhealthyRange)
+				}
+				dst.Spec.Topology.Workers.MachineDeployments[i] = md
+			}
+		}
+	}
+}
+
+func dropEmptyStringsClusterClass(dst *ClusterClass) {
+	if dst.Spec.InfrastructureNamingStrategy != nil {
+		dropEmptyString(&dst.Spec.InfrastructureNamingStrategy.Template)
+	}
+
+	if dst.Spec.ControlPlane.NamingStrategy != nil {
+		dropEmptyString(&dst.Spec.ControlPlane.NamingStrategy.Template)
+	}
+	if dst.Spec.ControlPlane.MachineHealthCheck != nil {
+		dropEmptyString(&dst.Spec.ControlPlane.MachineHealthCheck.UnhealthyRange)
+	}
+
+	for i, md := range dst.Spec.Workers.MachineDeployments {
+		if md.NamingStrategy != nil {
+			dropEmptyString(&md.NamingStrategy.Template)
+		}
+		dropEmptyString(&md.FailureDomain)
+		if md.MachineHealthCheck != nil {
+			dropEmptyString(&md.MachineHealthCheck.UnhealthyRange)
+		}
+		dst.Spec.Workers.MachineDeployments[i] = md
+	}
+
+	for i, mp := range dst.Spec.Workers.MachinePools {
+		if mp.NamingStrategy != nil {
+			dropEmptyString(&mp.NamingStrategy.Template)
+		}
+
+		dst.Spec.Workers.MachinePools[i] = mp
+	}
+
+	for i, p := range dst.Spec.Patches {
+		dropEmptyString(&p.EnabledIf)
+		if p.External != nil {
+			dropEmptyString(&p.External.GenerateExtension)
+			dropEmptyString(&p.External.ValidateExtension)
+			dropEmptyString(&p.External.DiscoverVariablesExtension)
+		}
+
+		for j, d := range p.Definitions {
+			for k, jp := range d.JSONPatches {
+				if jp.ValueFrom != nil {
+					dropEmptyString(&jp.ValueFrom.Variable)
+					dropEmptyString(&jp.ValueFrom.Template)
+				}
+				d.JSONPatches[k] = jp
+			}
+			p.Definitions[j] = d
+		}
+
+		dst.Spec.Patches[i] = p
+	}
+}
+
+func dropEmptyStringsMachineSpec(spec *MachineSpec) {
+	dropEmptyString(&spec.Version)
+	dropEmptyString(&spec.ProviderID)
+	dropEmptyString(&spec.FailureDomain)
+}
+
+func dropEmptyStringsMachineHealthCheck(dst *MachineHealthCheck) {
+	dropEmptyString(&dst.Spec.UnhealthyRange)
+}
+
+func dropEmptyString(s **string) {
+	if *s != nil && **s == "" {
+		*s = nil
+	}
 }

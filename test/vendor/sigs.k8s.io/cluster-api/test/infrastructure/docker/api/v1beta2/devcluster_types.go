@@ -19,7 +19,6 @@ package v1beta2
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	clusterv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
@@ -29,51 +28,51 @@ const (
 	ListenerAnnotationName = "inmemorycluster.infrastructure.cluster.x-k8s.io/listener"
 )
 
-// DevCluster's v1Beta2 conditions that apply to all the supported backends.
+// DevCluster's conditions that apply to all the supported backends.
 
-// DevCluster's Ready condition and corresponding reasons that will be used in v1Beta2 API version.
+// DevCluster's Ready condition and corresponding reasons.
 const (
-	// DevClusterReadyV1Beta2Condition is true if
+	// DevClusterReadyCondition is true if
 	// - The DevCluster's is using a docker backend and LoadBalancerAvailable is true.
-	DevClusterReadyV1Beta2Condition = clusterv1.ReadyCondition
+	DevClusterReadyCondition = clusterv1.ReadyCondition
 
-	// DevClusterReadyV1Beta2Reason surfaces when the DevCluster readiness criteria is met.
-	DevClusterReadyV1Beta2Reason = clusterv1.ReadyReason
+	// DevClusterReadyReason surfaces when the DevCluster readiness criteria is met.
+	DevClusterReadyReason = clusterv1.ReadyReason
 
-	// DevClusterNotReadyV1Beta2Reason surfaces when the DevCluster readiness criteria is not met.
-	DevClusterNotReadyV1Beta2Reason = clusterv1.NotReadyReason
+	// DevClusterNotReadyReason surfaces when the DevCluster readiness criteria is not met.
+	DevClusterNotReadyReason = clusterv1.NotReadyReason
 
-	// DevClusterReadyUnknownV1Beta2Reason surfaces when at least one DevCluster readiness criteria is unknown
+	// DevClusterReadyUnknownReason surfaces when at least one DevCluster readiness criteria is unknown
 	// and no DevCluster readiness criteria is not met.
-	DevClusterReadyUnknownV1Beta2Reason = clusterv1.ReadyUnknownReason
+	DevClusterReadyUnknownReason = clusterv1.ReadyUnknownReason
 )
 
-// DevCluster's v1Beta2 conditions that apply to the docker backend.
+// DevCluster's conditions that apply to the docker backend.
 
-// LoadBalancerAvailable condition and corresponding reasons that will be used in v1Beta2 API version for a DevCluster's docker backend.
+// LoadBalancerAvailable condition and corresponding reasons for a DevCluster's docker backend.
 const (
-	// DevClusterDockerLoadBalancerAvailableV1Beta2Condition documents the availability of the container that implements
+	// DevClusterDockerLoadBalancerAvailableCondition documents the availability of the container that implements
 	// the load balancer for a DevCluster's docker backend..
-	DevClusterDockerLoadBalancerAvailableV1Beta2Condition string = "LoadBalancerAvailable"
+	DevClusterDockerLoadBalancerAvailableCondition string = "LoadBalancerAvailable"
 
-	// DevClusterDockerLoadBalancerNotAvailableV1Beta2Reason surfaces when the container that implements
+	// DevClusterDockerLoadBalancerNotAvailableReason surfaces when the container that implements
 	// the load balancer for a DevCluster's docker backend is not available.
-	DevClusterDockerLoadBalancerNotAvailableV1Beta2Reason = clusterv1.NotAvailableReason
+	DevClusterDockerLoadBalancerNotAvailableReason = clusterv1.NotAvailableReason
 
-	// DevClusterDockerLoadBalancerAvailableV1Beta2Reason surfaces when the container that implements
+	// DevClusterDockerLoadBalancerAvailableReason surfaces when the container that implements
 	// the load balancer for a DevCluster's docker backend is available.
-	DevClusterDockerLoadBalancerAvailableV1Beta2Reason = clusterv1.AvailableReason
+	DevClusterDockerLoadBalancerAvailableReason = clusterv1.AvailableReason
 
-	// DevClusterDockerLoadBalancerDeletingV1Beta2Reason surfaces when the container that implements
+	// DevClusterDockerLoadBalancerDeletingReason surfaces when the container that implements
 	// the load balancer for a DevCluster's docker backend is deleting.
-	DevClusterDockerLoadBalancerDeletingV1Beta2Reason = clusterv1.DeletingReason
+	DevClusterDockerLoadBalancerDeletingReason = clusterv1.DeletingReason
 )
 
 // DevClusterSpec defines the desired state of the DevCluster infrastructure.
 type DevClusterSpec struct {
 	// controlPlaneEndpoint represents the endpoint used to communicate with the control plane.
 	// +optional
-	ControlPlaneEndpoint APIEndpoint `json:"controlPlaneEndpoint"`
+	ControlPlaneEndpoint APIEndpoint `json:"controlPlaneEndpoint,omitempty,omitzero"`
 
 	// backend defines backends for a DevCluster.
 	// +required
@@ -98,7 +97,11 @@ type DockerClusterBackendSpec struct {
 	// Instead, the docker cluster controller will simply copy these into the Status and allow the Cluster API
 	// controllers to do what they will with the defined failure domains.
 	// +optional
-	FailureDomains clusterv1beta1.FailureDomains `json:"failureDomains,omitempty"`
+	// +listType=map
+	// +listMapKey=name
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=100
+	FailureDomains []clusterv1.FailureDomain `json:"failureDomains,omitempty"`
 
 	// loadBalancer allows defining configurations for the cluster load balancer.
 	// +optional
@@ -110,33 +113,60 @@ type InMemoryClusterBackendSpec struct{}
 
 // DevClusterStatus defines the observed state of the DevCluster.
 type DevClusterStatus struct {
-	// ready denotes that the dev cluster infrastructure is ready.
-	// +optional
-	Ready bool `json:"ready"`
-
-	// failureDomains don't mean much in CAPD since it's all local, but we can see how the rest of cluster API
-	// will use this if we populate it.
-	// +optional
-	FailureDomains clusterv1beta1.FailureDomains `json:"failureDomains,omitempty"`
-
-	// conditions defines current service state of the DevCluster.
-	// +optional
-	Conditions clusterv1.Conditions `json:"conditions,omitempty"`
-
-	// v1beta2 groups all the fields that will be added or modified in DevCluster's status with the V1Beta2 version.
-	// +optional
-	V1Beta2 *DevClusterV1Beta2Status `json:"v1beta2,omitempty"`
-}
-
-// DevClusterV1Beta2Status groups all the fields that will be added or modified in DevCluster with the V1Beta2 version.
-// See https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/proposals/20240916-improve-status-in-CAPI-resources.md for more context.
-type DevClusterV1Beta2Status struct {
 	// conditions represents the observations of a DevCluster's current state.
+	// Known condition types are Ready, LoadBalancerAvailable and Paused.
 	// +optional
 	// +listType=map
 	// +listMapKey=type
 	// +kubebuilder:validation:MaxItems=32
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	// initialization provides observations of the DevCluster initialization process.
+	// NOTE: Fields in this struct are part of the Cluster API contract and are used to orchestrate initial Cluster provisioning.
+	// +optional
+	Initialization DevClusterInitializationStatus `json:"initialization,omitempty,omitzero"`
+
+	// failureDomains is a list of failure domain objects synced from the infrastructure provider.
+	// It don't mean much in CAPD since it's all local, but we can see how the rest of cluster API
+	// will use this if we populate it.
+	// +optional
+	// +listType=map
+	// +listMapKey=name
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=100
+	FailureDomains []clusterv1.FailureDomain `json:"failureDomains,omitempty"`
+
+	// deprecated groups all the status fields that are deprecated and will be removed when all the nested field are removed.
+	// +optional
+	Deprecated *DevClusterDeprecatedStatus `json:"deprecated,omitempty"`
+}
+
+// DevClusterInitializationStatus provides observations of the DevCluster initialization process.
+// +kubebuilder:validation:MinProperties=1
+type DevClusterInitializationStatus struct {
+	// provisioned is true when the infrastructure provider reports that the Cluster's infrastructure is fully provisioned.
+	// NOTE: this field is part of the Cluster API contract, and it is used to orchestrate initial Cluster provisioning.
+	// +optional
+	Provisioned *bool `json:"provisioned,omitempty"`
+}
+
+// DevClusterDeprecatedStatus groups all the status fields that are deprecated and will be removed when support for v1beta1 will be dropped.
+// See https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/proposals/20240916-improve-status-in-CAPI-resources.md for more context.
+type DevClusterDeprecatedStatus struct {
+	// v1beta1 groups all the status fields that are deprecated and will be removed when support for v1beta1 will be dropped.
+	// +optional
+	V1Beta1 *DevClusterV1Beta1DeprecatedStatus `json:"v1beta1,omitempty"`
+}
+
+// DevClusterV1Beta1DeprecatedStatus groups all the status fields that are deprecated and will be removed when support for v1beta1 will be dropped.
+// See https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/proposals/20240916-improve-status-in-CAPI-resources.md for more context.
+type DevClusterV1Beta1DeprecatedStatus struct {
+	// conditions defines current service state of the DevCluster.
+	//
+	// +optional
+	//
+	// Deprecated: This field is deprecated and is going to be removed when support for v1beta1 is dropped.
+	Conditions clusterv1.Conditions `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:resource:path=devclusters,scope=Namespaced,categories=cluster-api
@@ -157,28 +187,31 @@ type DevCluster struct {
 
 // GetV1Beta1Conditions returns the set of conditions for this object.
 func (c *DevCluster) GetV1Beta1Conditions() clusterv1.Conditions {
-	return c.Status.Conditions
+	if c.Status.Deprecated == nil || c.Status.Deprecated.V1Beta1 == nil {
+		return nil
+	}
+	return c.Status.Deprecated.V1Beta1.Conditions
 }
 
 // SetV1Beta1Conditions sets the conditions on this object.
 func (c *DevCluster) SetV1Beta1Conditions(conditions clusterv1.Conditions) {
-	c.Status.Conditions = conditions
+	if c.Status.Deprecated == nil {
+		c.Status.Deprecated = &DevClusterDeprecatedStatus{}
+	}
+	if c.Status.Deprecated.V1Beta1 == nil {
+		c.Status.Deprecated.V1Beta1 = &DevClusterV1Beta1DeprecatedStatus{}
+	}
+	c.Status.Deprecated.V1Beta1.Conditions = conditions
 }
 
 // GetConditions returns the set of conditions for this object.
 func (c *DevCluster) GetConditions() []metav1.Condition {
-	if c.Status.V1Beta2 == nil {
-		return nil
-	}
-	return c.Status.V1Beta2.Conditions
+	return c.Status.Conditions
 }
 
 // SetConditions sets conditions for an API object.
 func (c *DevCluster) SetConditions(conditions []metav1.Condition) {
-	if c.Status.V1Beta2 == nil {
-		c.Status.V1Beta2 = &DevClusterV1Beta2Status{}
-	}
-	c.Status.V1Beta2.Conditions = conditions
+	c.Status.Conditions = conditions
 }
 
 // +kubebuilder:object:root=true

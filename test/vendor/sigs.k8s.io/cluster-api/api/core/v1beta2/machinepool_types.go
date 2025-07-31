@@ -86,6 +86,7 @@ type MachinePoolSpec struct {
 	// providerIDList are the identification IDs of machine instances provided by the provider.
 	// This field must match the provider IDs as seen on the node objects corresponding to a machine pool's machine instances.
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=10000
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:MaxLength=512
@@ -93,6 +94,7 @@ type MachinePoolSpec struct {
 
 	// failureDomains is the list of failure domains this MachinePool should be attached to.
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=100
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:MaxLength=256
@@ -104,6 +106,7 @@ type MachinePoolSpec struct {
 // ANCHOR: MachinePoolStatus
 
 // MachinePoolStatus defines the observed state of MachinePool.
+// +kubebuilder:validation:MinProperties=1
 type MachinePoolStatus struct {
 	// conditions represents the observations of a MachinePool's current state.
 	// Known condition types are Available, BootstrapConfigReady, InfrastructureReady, MachinesReady, MachinesUpToDate,
@@ -117,10 +120,11 @@ type MachinePoolStatus struct {
 	// initialization provides observations of the MachinePool initialization process.
 	// NOTE: Fields in this struct are part of the Cluster API contract and are used to orchestrate initial MachinePool provisioning.
 	// +optional
-	Initialization *MachinePoolInitializationStatus `json:"initialization,omitempty"`
+	Initialization MachinePoolInitializationStatus `json:"initialization,omitempty,omitzero"`
 
 	// nodeRefs will point to the corresponding Nodes if it they exist.
 	// +optional
+	// +listType=atomic
 	// +kubebuilder:validation:MaxItems=10000
 	NodeRefs []corev1.ObjectReference `json:"nodeRefs,omitempty"`
 
@@ -147,6 +151,7 @@ type MachinePoolStatus struct {
 
 	// observedGeneration is the latest generation observed by the controller.
 	// +optional
+	// +kubebuilder:validation:Minimum=1
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 
 	// deprecated groups all the status fields that are deprecated and will be removed when all the nested field are removed.
@@ -156,18 +161,19 @@ type MachinePoolStatus struct {
 
 // MachinePoolInitializationStatus provides observations of the MachinePool initialization process.
 // NOTE: Fields in this struct are part of the Cluster API contract and are used to orchestrate initial MachinePool provisioning.
+// +kubebuilder:validation:MinProperties=1
 type MachinePoolInitializationStatus struct {
 	// infrastructureProvisioned is true when the infrastructure provider reports that MachinePool's infrastructure is fully provisioned.
 	// NOTE: this field is part of the Cluster API contract, and it is used to orchestrate provisioning.
 	// The value of this field is never updated after provisioning is completed.
 	// +optional
-	InfrastructureProvisioned bool `json:"infrastructureProvisioned"`
+	InfrastructureProvisioned *bool `json:"infrastructureProvisioned,omitempty"`
 
 	// bootstrapDataSecretCreated is true when the bootstrap provider reports that the MachinePool's boostrap secret is created.
 	// NOTE: this field is part of the Cluster API contract, and it is used to orchestrate provisioning.
 	// The value of this field is never updated after provisioning is completed.
 	// +optional
-	BootstrapDataSecretCreated bool `json:"bootstrapDataSecretCreated"`
+	BootstrapDataSecretCreated *bool `json:"bootstrapDataSecretCreated,omitempty"`
 }
 
 // MachinePoolDeprecatedStatus groups all the status fields that are deprecated and will be removed in a future version.
@@ -204,21 +210,21 @@ type MachinePoolV1Beta1DeprecatedStatus struct {
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=10240
-	FailureMessage *string `json:"failureMessage,omitempty"`
+	FailureMessage *string `json:"failureMessage,omitempty"` //nolint:kubeapilinter // field will be removed when v1beta1 is removed
 
 	// readyReplicas is the number of ready replicas for this MachinePool. A machine is considered ready when the node has been created and is "Ready".
 	//
 	// Deprecated: This field is deprecated and is going to be removed when support for v1beta1 will be dropped. Please see https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/proposals/20240916-improve-status-in-CAPI-resources.md for more details.
 	//
 	// +optional
-	ReadyReplicas int32 `json:"readyReplicas,omitempty"`
+	ReadyReplicas int32 `json:"readyReplicas,omitempty"` //nolint:kubeapilinter // field will be removed when v1beta1 is removed
 
 	// availableReplicas is the number of available replicas (ready for at least minReadySeconds) for this MachinePool.
 	//
 	// Deprecated: This field is deprecated and is going to be removed when support for v1beta1 will be dropped. Please see https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/proposals/20240916-improve-status-in-CAPI-resources.md for more details.
 	//
 	// +optional
-	AvailableReplicas int32 `json:"availableReplicas,omitempty"`
+	AvailableReplicas int32 `json:"availableReplicas,omitempty"` //nolint:kubeapilinter // field will be removed when v1beta1 is removed
 
 	// unavailableReplicas is the total number of unavailable machine instances targeted by this machine pool.
 	// This is the total number of machine instances that are still required for
@@ -229,7 +235,7 @@ type MachinePoolV1Beta1DeprecatedStatus struct {
 	// Deprecated: This field is deprecated and is going to be removed when support for v1beta1 will be dropped. Please see https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/proposals/20240916-improve-status-in-CAPI-resources.md for more details.
 	//
 	// +optional
-	UnavailableReplicas int32 `json:"unavailableReplicas,omitempty"`
+	UnavailableReplicas int32 `json:"unavailableReplicas,omitempty"` //nolint:kubeapilinter // field will be removed when v1beta1 is removed
 }
 
 // ANCHOR_END: MachinePoolStatus
@@ -342,11 +348,11 @@ type MachinePool struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// spec is the desired state of MachinePool.
-	// +optional
-	Spec MachinePoolSpec `json:"spec,omitempty"`
+	// +required
+	Spec MachinePoolSpec `json:"spec,omitempty,omitzero"`
 	// status is the observed state of MachinePool.
 	// +optional
-	Status MachinePoolStatus `json:"status,omitempty"`
+	Status MachinePoolStatus `json:"status,omitempty,omitzero"`
 }
 
 // GetV1Beta1Conditions returns the set of conditions for this object.

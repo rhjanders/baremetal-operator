@@ -32,7 +32,9 @@ const (
 type DockerMachineSpec struct {
 	// ProviderID will be the container name in ProviderID format (docker:////<containername>)
 	// +optional
-	ProviderID *string `json:"providerID,omitempty"`
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=512
+	ProviderID string `json:"providerID,omitempty"`
 
 	// CustomImage allows customizing the container image that is used for
 	// running the machine
@@ -81,9 +83,19 @@ type Mount struct {
 
 // DockerMachineStatus defines the observed state of DockerMachine.
 type DockerMachineStatus struct {
-	// Ready denotes that the machine (docker container) is ready
+	// conditions represents the observations of a DockerMachine's current state.
+	// Known condition types are NodeProvisioned, EtcdProvisioned, APIServerProvisioned, VMProvisioned,
+	// ControlPlaneInitialized, BootstrapExecSucceeded, LoadBalancerAvailable, ContainerProvisioned and Paused.
 	// +optional
-	Ready bool `json:"ready"`
+	// +listType=map
+	// +listMapKey=type
+	// +kubebuilder:validation:MaxItems=32
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	// initialization provides observations of the DockerMachine initialization process.
+	// NOTE: Fields in this struct are part of the Cluster API contract and are used to orchestrate initial Machine provisioning.
+	// +optional
+	Initialization DockerMachineInitializationStatus `json:"initialization,omitempty,omitzero"`
 
 	// LoadBalancerConfigured denotes that the machine has been
 	// added to the load balancer
@@ -94,25 +106,37 @@ type DockerMachineStatus struct {
 	// +optional
 	Addresses []clusterv1.MachineAddress `json:"addresses,omitempty"`
 
-	// Conditions defines current service state of the DockerMachine.
+	// deprecated groups all the status fields that are deprecated and will be removed when all the nested field are removed.
 	// +optional
-	Conditions clusterv1.Conditions `json:"conditions,omitempty"`
-
-	// v1beta2 groups all the fields that will be added or modified in DockerMachine's status with the V1Beta2 version.
-	// +optional
-	V1Beta2 *DockerMachineV1Beta2Status `json:"v1beta2,omitempty"`
+	Deprecated *DockerMachineDeprecatedStatus `json:"deprecated,omitempty"`
 }
 
-// DockerMachineV1Beta2Status groups all the fields that will be added or modified in DockerMachine with the V1Beta2 version.
-// See https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/proposals/20240916-improve-status-in-CAPI-resources.md for more context.
-type DockerMachineV1Beta2Status struct {
-	// conditions represents the observations of a DockerMachine's current state.
-	// Known condition types are Ready, ContainerProvisioned, BootstrapExecSucceeded, Deleting, Paused.
+// DockerMachineInitializationStatus provides observations of the DockerMachine initialization process.
+// +kubebuilder:validation:MinProperties=1
+type DockerMachineInitializationStatus struct {
+	// provisioned is true when the infrastructure provider reports that the Machine's infrastructure is fully provisioned.
+	// NOTE: this field is part of the Cluster API contract, and it is used to orchestrate initial Machine provisioning.
 	// +optional
-	// +listType=map
-	// +listMapKey=type
-	// +kubebuilder:validation:MaxItems=32
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
+	Provisioned *bool `json:"provisioned,omitempty"`
+}
+
+// DockerMachineDeprecatedStatus groups all the status fields that are deprecated and will be removed when support for v1beta1 will be dropped.
+// See https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/proposals/20240916-improve-status-in-CAPI-resources.md for more context.
+type DockerMachineDeprecatedStatus struct {
+	// v1beta1 groups all the status fields that are deprecated and will be removed when support for v1beta1 will be dropped.
+	// +optional
+	V1Beta1 *DockerMachineV1Beta1DeprecatedStatus `json:"v1beta1,omitempty"`
+}
+
+// DockerMachineV1Beta1DeprecatedStatus groups all the status fields that are deprecated and will be removed when support for v1beta1 will be dropped.
+// See https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/proposals/20240916-improve-status-in-CAPI-resources.md for more context.
+type DockerMachineV1Beta1DeprecatedStatus struct {
+	// conditions defines current service state of the DockerMachine.
+	//
+	// +optional
+	//
+	// Deprecated: This field is deprecated and is going to be removed when support for v1beta1 is dropped.
+	Conditions clusterv1.Conditions `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:resource:path=dockermachines,scope=Namespaced,categories=cluster-api
@@ -122,7 +146,7 @@ type DockerMachineV1Beta2Status struct {
 // +kubebuilder:printcolumn:name="Cluster",type="string",JSONPath=".metadata.labels['cluster\\.x-k8s\\.io/cluster-name']",description="Cluster"
 // +kubebuilder:printcolumn:name="Machine",type="string",JSONPath=".metadata.ownerReferences[?(@.kind==\"Machine\")].name",description="Machine object which owns with this DockerMachine"
 // +kubebuilder:printcolumn:name="ProviderID",type="string",JSONPath=".spec.providerID",description="Provider ID"
-// +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.ready",description="Machine ready status"
+// +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.initialization.provisioned",description="Machine ready status"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp",description="Time duration since creation of DockerMachine"
 
 // DockerMachine is the Schema for the dockermachines API.
@@ -136,28 +160,31 @@ type DockerMachine struct {
 
 // GetV1Beta1Conditions returns the set of conditions for this object.
 func (c *DockerMachine) GetV1Beta1Conditions() clusterv1.Conditions {
-	return c.Status.Conditions
+	if c.Status.Deprecated == nil || c.Status.Deprecated.V1Beta1 == nil {
+		return nil
+	}
+	return c.Status.Deprecated.V1Beta1.Conditions
 }
 
 // SetV1Beta1Conditions sets the conditions on this object.
 func (c *DockerMachine) SetV1Beta1Conditions(conditions clusterv1.Conditions) {
-	c.Status.Conditions = conditions
+	if c.Status.Deprecated == nil {
+		c.Status.Deprecated = &DockerMachineDeprecatedStatus{}
+	}
+	if c.Status.Deprecated.V1Beta1 == nil {
+		c.Status.Deprecated.V1Beta1 = &DockerMachineV1Beta1DeprecatedStatus{}
+	}
+	c.Status.Deprecated.V1Beta1.Conditions = conditions
 }
 
 // GetConditions returns the set of conditions for this object.
 func (c *DockerMachine) GetConditions() []metav1.Condition {
-	if c.Status.V1Beta2 == nil {
-		return nil
-	}
-	return c.Status.V1Beta2.Conditions
+	return c.Status.Conditions
 }
 
 // SetConditions sets conditions for an API object.
 func (c *DockerMachine) SetConditions(conditions []metav1.Condition) {
-	if c.Status.V1Beta2 == nil {
-		c.Status.V1Beta2 = &DockerMachineV1Beta2Status{}
-	}
-	c.Status.V1Beta2.Conditions = conditions
+	c.Status.Conditions = conditions
 }
 
 // +kubebuilder:object:root=true
