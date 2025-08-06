@@ -1464,6 +1464,30 @@ func (r *BareMetalHostReconciler) doServiceIfNeeded(prov provisioner.Provisioner
 		return nil
 	}
 
+	// If we're in a servicing error state and updates were removed from spec,
+	// let the provisioner handle the transition back to active
+	if info.host.Status.ErrorType == metal3api.ServicingError && !hasChanges {
+		info.log.Info("updates removed from spec while in servicing error state, attempting recovery")
+		provResult, started, err := prov.Service(servicingData, false, false)
+		if err != nil {
+			return actionError{fmt.Errorf("failed to recover from servicing error: %w", err)}
+		}
+		if provResult.ErrorMessage != "" {
+			info.log.Info("failed to recover from servicing error", "error", provResult.ErrorMessage)
+			return actionError{fmt.Errorf("failed to recover from servicing error: %s", provResult.ErrorMessage)}
+		}
+		if started {
+			info.log.Info("recovery from servicing error initiated")
+			return actionContinue{}
+		}
+		// If not started and no error, we've successfully recovered
+		info.log.Info("successfully recovered from servicing error")
+		info.host.Status.ErrorType = ""
+		info.host.Status.ErrorMessage = ""
+		info.host.Status.OperationalStatus = metal3api.OperationalStatusOK
+		return actionComplete{}
+	}
+
 	// FIXME(janders/dtantsur): this implementation may lead to a scenario where if we never actually
 	// succeed before leaving this state (e.g. by deprovisioning) we lose the signal that the
 	// update didn't actually happen. This is deemed an acceptable risk for the moment since it is only
