@@ -76,6 +76,15 @@ func (p *ironicProvisioner) startServicing(bmcAccess bmc.AccessDetails, ironicNo
 	return
 }
 
+func (p *ironicProvisioner) buildWaitServiceStep() []nodes.ServiceStep {
+	return []nodes.ServiceStep{
+		{
+			Interface: nodes.InterfaceDeploy,
+			Step:      "wait",
+		},
+	}
+}
+
 func (p *ironicProvisioner) Service(data provisioner.ServicingData, unprepared, restartOnFailure bool) (result provisioner.Result, started bool, err error) {
 	if !p.availableFeatures.HasServicing() {
 		result, err = operationFailed(fmt.Sprintf("servicing not supported: requires API version 1.87, available is 1.%d", p.availableFeatures.MaxVersion))
@@ -94,9 +103,30 @@ func (p *ironicProvisioner) Service(data provisioner.ServicingData, unprepared, 
 		return result, started, err
 	}
 
+	// Check if there are any pending updates
+	serviceSteps, err := p.buildServiceSteps(bmcAccess, data)
+	if err != nil {
+		result, err = operationFailed(err.Error())
+		return result, started, err
+	}
+
 	switch nodes.ProvisionState(ironicNode.ProvisionState) {
 	case nodes.ServiceFail:
-		// When servicing failed, we need to clean host provisioning settings.
+		// When servicing failed and there are no pending updates (user removed them),
+		// we need to transition back to active using a wait step
+		if len(serviceSteps) == 0 {
+			p.log.Info("transitioning from service failed to active using wait step")
+			started, result, err = p.tryChangeNodeProvisionState(
+				ironicNode,
+				nodes.ProvisionStateOpts{
+					Target:       nodes.TargetService,
+					ServiceSteps: p.buildWaitServiceStep(),
+				},
+			)
+			return result, started, err
+		}
+
+		// When servicing failed and there are pending updates, we need to clean host provisioning settings
 		// If restartOnFailure is false, it means the settings aren't cleared.
 		if !restartOnFailure {
 			result, err = operationFailed(ironicNode.LastError)
