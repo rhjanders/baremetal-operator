@@ -94,6 +94,27 @@ func (p *ironicProvisioner) abortServicing(ironicNode *nodes.Node) (result provi
 	return
 }
 
+func (p *ironicProvisioner) shouldAbortServicing(data provisioner.ServicingData) bool {
+	// Determine if user cleared the appropriate specs to trigger abort
+	// Logic:
+	// - If only settings triggered servicing, abort only if settings spec is cleared
+	// - If only components triggered servicing, abort only if components spec is cleared
+	// - If both triggered servicing, abort only if both specs are cleared
+	if data.ServicingTriggeredBySettings && data.ServicingTriggeredByComponents {
+		// Both triggered - must clear both to abort
+		return !data.HasFirmwareSettingsSpec && !data.HasFirmwareComponentsSpec
+	} else if data.ServicingTriggeredBySettings {
+		// Only settings triggered - must clear settings to abort
+		return !data.HasFirmwareSettingsSpec
+	} else if data.ServicingTriggeredByComponents {
+		// Only components triggered - must clear components to abort
+		return !data.HasFirmwareComponentsSpec
+	}
+
+	// Neither triggered (shouldn't happen during servicing) - don't abort
+	return false
+}
+
 func (p *ironicProvisioner) Service(data provisioner.ServicingData, unprepared, restartOnFailure bool) (result provisioner.Result, started bool, err error) {
 	if !p.availableFeatures.HasServicing() {
 		result, err = operationFailed(fmt.Sprintf("servicing not supported: requires API version 1.87, available is 1.%d", p.availableFeatures.MaxVersion))
@@ -122,15 +143,17 @@ func (p *ironicProvisioner) Service(data provisioner.ServicingData, unprepared, 
 	p.log.Info("janders_debug: servicing state check",
 		"hasSettingsSpec", data.HasFirmwareSettingsSpec,
 		"hasComponentsSpec", data.HasFirmwareComponentsSpec,
+		"triggeredBySettings", data.ServicingTriggeredBySettings,
+		"triggeredByComponents", data.ServicingTriggeredByComponents,
 		"serviceStepsCount", len(serviceSteps),
 		"nodeState", ironicNode.ProvisionState)
 
 	switch nodes.ProvisionState(ironicNode.ProvisionState) {
 	case nodes.ServiceFail:
-		// When servicing failed and user actually removed the specs (not just no updates calculated),
+		// When servicing failed and user actually removed the appropriate specs,
 		// we need to abort the servicing operation to back out
-		if !data.HasFirmwareSettingsSpec && !data.HasFirmwareComponentsSpec {
-			p.log.Info("aborting servicing because spec.updates/spec.settings was removed")
+		if p.shouldAbortServicing(data) {
+			p.log.Info("aborting servicing because user cleared the relevant spec.updates/spec.settings")
 			return p.abortServicing(ironicNode)
 		}
 
@@ -163,12 +186,12 @@ func (p *ironicProvisioner) Service(data provisioner.ServicingData, unprepared, 
 		p.log.Info("servicing finished on the host")
 		result, err = operationComplete()
 	case nodes.Servicing, nodes.ServiceWait:
-		// If user actually removed spec.updates/spec.settings while servicing is in progress, abort immediately
-		if !data.HasFirmwareSettingsSpec && !data.HasFirmwareComponentsSpec {
-			p.log.Info("aborting in-progress servicing because spec.updates/spec.settings was removed")
+		// If user cleared the relevant spec.updates/spec.settings while servicing is in progress, abort immediately
+		if p.shouldAbortServicing(data) {
+			p.log.Info("aborting in-progress servicing because user cleared the relevant spec.updates/spec.settings")
 			return p.abortServicing(ironicNode)
 		}
-		
+
 		p.log.Info("waiting for host to become active",
 			"state", ironicNode.ProvisionState,
 			"serviceStep", ironicNode.ServiceStep)

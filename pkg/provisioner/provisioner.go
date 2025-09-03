@@ -122,6 +122,9 @@ type ServicingData struct {
 	// Flags to track if specs exist (vs. just no updates calculated)
 	HasFirmwareSettingsSpec   bool
 	HasFirmwareComponentsSpec bool
+	// Flags to track which specs triggered the current servicing operation
+	ServicingTriggeredBySettings   bool
+	ServicingTriggeredByComponents bool
 }
 
 type ProvisionData struct {

@@ -1444,6 +1444,14 @@ func (r *BareMetalHostReconciler) doServiceIfNeeded(prov provisioner.Provisioner
 		hfsExists := &metal3api.HostFirmwareSettings{}
 		hfsExistsErr := r.Get(info.ctx, info.request.NamespacedName, hfsExists)
 		servicingData.HasFirmwareSettingsSpec = (hfsExistsErr == nil && len(hfsExists.Spec.Settings) > 0)
+
+		// Set trigger state in host status when servicing starts, or read existing state
+		if hfsDirty && info.host.Status.OperationalStatus != metal3api.OperationalStatusServicing {
+			// Servicing is starting - set the trigger flag
+			info.host.Status.ServicingTriggeredBySettings = true
+		}
+		// Use persisted trigger state from host status
+		servicingData.ServicingTriggeredBySettings = info.host.Status.ServicingTriggeredBySettings
 	}
 
 	if liveFirmwareUpdatesAllowed {
@@ -1466,6 +1474,14 @@ func (r *BareMetalHostReconciler) doServiceIfNeeded(prov provisioner.Provisioner
 		hfcExists := &metal3api.HostFirmwareComponents{}
 		hfcExistsErr := r.Get(info.ctx, info.request.NamespacedName, hfcExists)
 		servicingData.HasFirmwareComponentsSpec = (hfcExistsErr == nil && len(hfcExists.Spec.Updates) > 0)
+
+		// Set trigger state in host status when servicing starts, or read existing state
+		if hfcDirty && info.host.Status.OperationalStatus != metal3api.OperationalStatusServicing {
+			// Servicing is starting - set the trigger flag
+			info.host.Status.ServicingTriggeredByComponents = true
+		}
+		// Use persisted trigger state from host status
+		servicingData.ServicingTriggeredByComponents = info.host.Status.ServicingTriggeredByComponents
 	}
 
 	hasChanges := fwDirty || hfsDirty || hfcDirty
@@ -1473,8 +1489,10 @@ func (r *BareMetalHostReconciler) doServiceIfNeeded(prov provisioner.Provisioner
 	info.log.Info("janders_debug: servicing data flags",
 		"hasSettingsSpec", servicingData.HasFirmwareSettingsSpec,
 		"hasComponentsSpec", servicingData.HasFirmwareComponentsSpec,
+		"triggeredBySettings", servicingData.ServicingTriggeredBySettings,
+		"triggeredByComponents", servicingData.ServicingTriggeredByComponents,
 		"fwDirty", fwDirty, "hfsDirty", hfsDirty, "hfcDirty", hfcDirty,
-		"hasChanges", hasChanges, "note", "hasSpec flags check if spec.settings/spec.updates have content")
+		"hasChanges", hasChanges)
 
 	// Even if settings are clean, we need to check the result of the current servicing.
 	if !hasChanges && info.host.Status.OperationalStatus != metal3api.OperationalStatusServicing && info.host.Status.ErrorType != metal3api.ServicingError {
@@ -1503,6 +1521,9 @@ func (r *BareMetalHostReconciler) doServiceIfNeeded(prov provisioner.Provisioner
 		info.host.Status.ErrorType = ""
 		info.host.Status.ErrorMessage = ""
 		info.host.Status.OperationalStatus = metal3api.OperationalStatusOK
+		// Clear servicing trigger flags now that servicing abort is complete
+		info.host.Status.ServicingTriggeredBySettings = false
+		info.host.Status.ServicingTriggeredByComponents = false
 		return actionComplete{}
 	}
 
@@ -1561,6 +1582,9 @@ func (r *BareMetalHostReconciler) doServiceIfNeeded(prov provisioner.Provisioner
 
 	// Servicing is finished at this point, clean up operational status
 	if clearErrorWithStatus(info.host, metal3api.OperationalStatusOK) {
+		// Clear servicing trigger flags now that servicing is complete
+		info.host.Status.ServicingTriggeredBySettings = false
+		info.host.Status.ServicingTriggeredByComponents = false
 		// FIXME(janders/dtantsur): this can be racy. We should consider
 		// using a generation number to decide if we start servicing or not.
 		return actionUpdate{actionContinue{delay: subResourceNotReadyRetryDelay}}
