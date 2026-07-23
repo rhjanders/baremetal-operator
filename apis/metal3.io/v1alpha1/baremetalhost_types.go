@@ -55,6 +55,10 @@ const (
 	// when rebooting - hard/soft.
 	RebootAnnotationPrefix = "reboot.metal3.io"
 
+	// ServiceAnnotationPrefix is the annotation that triggers servicing
+	// (firmware updates/settings) without requiring a reboot.
+	ServiceAnnotationPrefix = "service.metal3.io"
+
 	// InspectAnnotationPrefix is used to specify if automatic introspection carried out
 	// during registration of BMH is enabled or disabled.
 	InspectAnnotationPrefix = "inspect.metal3.io"

@@ -24,18 +24,19 @@ type UpdatePolicy string
 const (
 	HostUpdatePolicyOnPreparing UpdatePolicy = "onPreparing"
 	HostUpdatePolicyOnReboot    UpdatePolicy = "onReboot"
+	HostUpdatePolicyOnService   UpdatePolicy = "onService"
 )
 
 // HostUpdatePolicySpec defines the desired state of HostUpdatePolicy.
 type HostUpdatePolicySpec struct {
 	// Defines policy for changing firmware settings
 	// +optional
-	// +kubebuilder:validation:Enum="onPreparing";"onReboot"
+	// +kubebuilder:validation:Enum="onPreparing";"onReboot";"onService"
 	FirmwareSettings UpdatePolicy `json:"firmwareSettings,omitempty"`
 
 	// Defines policy for updating firmware
 	// +optional
-	// +kubebuilder:validation:Enum="onPreparing";"onReboot"
+	// +kubebuilder:validation:Enum="onPreparing";"onReboot";"onService"
 	FirmwareUpdates UpdatePolicy `json:"firmwareUpdates,omitempty"`
 }
 

@@ -495,6 +495,30 @@ func clearRebootAnnotations(host *metal3api.BareMetalHost) (dirty bool) {
 	return
 }
 
+// hasServiceAnnotation returns true if any service annotation is set on the host.
+func hasServiceAnnotation(info *reconcileInfo) bool {
+	for annotation := range info.host.GetAnnotations() {
+		if isServiceAnnotation(annotation) {
+			return true
+		}
+	}
+	return false
+}
+
+// isServiceAnnotation returns true if the provided annotation is a service annotation (either suffixed or not).
+func isServiceAnnotation(annotation string) bool {
+	return strings.HasPrefix(annotation, metal3api.ServiceAnnotationPrefix+"/") || annotation == metal3api.ServiceAnnotationPrefix
+}
+
+// clearServiceAnnotations deletes the base service annotation if it exists on the provided host.
+func clearServiceAnnotations(host *metal3api.BareMetalHost) bool {
+	if _, exists := host.Annotations[metal3api.ServiceAnnotationPrefix]; exists {
+		delete(host.Annotations, metal3api.ServiceAnnotationPrefix)
+		return true
+	}
+	return false
+}
+
 // inspectionRefreshRequested checks for existence of inspect.metal3.io
 // annotation and returns true if it exist.
 func inspectionRefreshRequested(host *metal3api.BareMetalHost) bool {
@@ -1546,8 +1570,8 @@ func (r *BareMetalHostReconciler) doServiceIfNeeded(ctx context.Context, prov pr
 	info.log.V(VerbosityLevelTrace).Info("doServiceIfNeeded started")
 	servicingData := provisioner.ServicingData{}
 
-	// (NOTE)janders: since Servicing is an opt-in feature that requires HostUpdatePolicy to be created and set to onReboot
-	// set below booleans to false by default and change to true based on policy settings
+	// Servicing is opt-in: requires a HostUpdatePolicy set to onReboot or onService.
+	// Set below booleans to false by default and change to true based on policy settings.
 
 	var fwDirty bool
 	var hfsDirty bool
@@ -1556,8 +1580,10 @@ func (r *BareMetalHostReconciler) doServiceIfNeeded(ctx context.Context, prov pr
 	var liveFirmwareSettingsAllowed, liveFirmwareUpdatesAllowed bool
 
 	if hup != nil {
-		liveFirmwareSettingsAllowed = (hup.Spec.FirmwareSettings == metal3api.HostUpdatePolicyOnReboot)
-		liveFirmwareUpdatesAllowed = (hup.Spec.FirmwareUpdates == metal3api.HostUpdatePolicyOnReboot)
+		liveFirmwareSettingsAllowed = (hup.Spec.FirmwareSettings == metal3api.HostUpdatePolicyOnReboot ||
+			hup.Spec.FirmwareSettings == metal3api.HostUpdatePolicyOnService)
+		liveFirmwareUpdatesAllowed = (hup.Spec.FirmwareUpdates == metal3api.HostUpdatePolicyOnReboot ||
+			hup.Spec.FirmwareUpdates == metal3api.HostUpdatePolicyOnService)
 	}
 
 	if liveFirmwareSettingsAllowed {
@@ -1725,7 +1751,8 @@ func (r *BareMetalHostReconciler) manageHostPower(ctx context.Context, prov prov
 		}
 	}
 
-	servicingAllowed := isProvisioned && !info.host.Status.PoweredOn && desiredPowerOnState
+	hasService := hasServiceAnnotation(info)
+	servicingAllowed := isProvisioned && desiredPowerOnState && (hasService || !info.host.Status.PoweredOn)
 	if servicingAllowed || info.host.Status.OperationalStatus == metal3api.OperationalStatusServicing || info.host.Status.ErrorType == metal3api.ServicingError {
 		var hup *metal3api.HostUpdatePolicy
 		hup, err = r.acquireHostUpdatePolicy(ctx, info)
@@ -1738,6 +1765,15 @@ func (r *BareMetalHostReconciler) manageHostPower(ctx context.Context, prov prov
 		result := r.doServiceIfNeeded(ctx, prov, info, hup)
 		if result != nil {
 			return result
+		}
+	}
+
+	if hasService && isProvisioned {
+		if clearServiceAnnotations(info.host) {
+			if err = r.Update(ctx, info.host); err != nil {
+				return actionError{fmt.Errorf("failed to remove service annotation from host: %w", err)}
+			}
+			return actionContinue{}
 		}
 	}
 
